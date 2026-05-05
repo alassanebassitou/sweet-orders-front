@@ -7,7 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/authStore';
-import { mockCommandes } from '@/lib/mockData';
+import { userService, authService } from '@/lib/services';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { LoadingState, ErrorState } from '@/components/common/StateViews';
+import { commandeService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
 
 export default function ClientProfil() {
