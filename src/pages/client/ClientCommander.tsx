@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { commandeService, parametreService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
-import { mockParametres } from '@/lib/mockData';
 
 const steps = ['Panier', 'Livraison', 'Personnalisations', 'Récapitulatif', 'Confirmation'];
 
