@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { authService } from '@/lib/services';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -30,7 +31,9 @@ export default function AdminLayout() {
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = async () => {
+    try { await authService.logout(); } finally { logout(); navigate('/login'); }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

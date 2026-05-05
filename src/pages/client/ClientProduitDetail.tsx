@@ -2,20 +2,23 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CakeSlice, Minus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { mockProduits, mockPersonnalisations } from '@/lib/mockData';
+import { produitService } from '@/lib/services';
 import { useCartStore } from '@/stores/cartStore';
 import { formatFCFA } from '@/lib/format';
+import { LoadingState, ErrorState } from '@/components/common/StateViews';
 
 export default function ClientProduitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const product = mockProduits.find((p) => p.id === id);
-  const persos = id ? mockPersonnalisations[id] || [] : [];
+
+  const productQ = useQuery({ queryKey: ['produit', id], queryFn: () => produitService.get(id!), enabled: !!id });
+  const persosQ = useQuery({ queryKey: ['produit-persos', id], queryFn: () => produitService.getPersonnalisations(id!), enabled: !!id });
 
   const [selected, setSelected] = useState<string[]>([]);
   const [message, setMessage] = useState('');
@@ -24,36 +27,30 @@ export default function ClientProduitDetail() {
   const [added, setAdded] = useState(false);
 
   const addItem = useCartStore((s) => s.addItem);
+  const product = productQ.data;
+  const persos = persosQ.data || product?.personnalisations || [];
 
   const total = useMemo(() => {
     if (!product) return 0;
-    const supp = persos.filter((p) => selected.includes(p.id)).reduce((s, p) => s + p.prixSupplementaire, 0);
+    const supp = persos.filter((p: any) => selected.includes(String(p.id))).reduce((s: number, p: any) => s + (p.prixSupplementaire || 0), 0);
     return (product.prixBase + supp) * qty;
   }, [product, persos, selected, qty]);
 
-  if (!product) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-muted-foreground">Produit introuvable</p>
-        <Button onClick={() => navigate('/app/catalogue')} className="mt-4">Retour</Button>
-      </div>
-    );
-  }
+  if (productQ.isLoading) return <div className="p-6"><LoadingState /></div>;
+  if (productQ.isError || !product) return <div className="p-6"><ErrorState message="Produit introuvable" onRetry={productQ.refetch} /></div>;
 
-  const toggle = (pid: string) => {
-    setSelected((s) => (s.includes(pid) ? s.filter((x) => x !== pid) : [...s, pid]));
-  };
+  const toggle = (pid: string) => setSelected((s) => (s.includes(pid) ? s.filter((x) => x !== pid) : [...s, pid]));
 
   const handleAdd = () => {
     addItem({
-      produitId: product.id,
+      produitId: String(product.id),
       nom: product.nom,
       prixBase: product.prixBase,
       photoUrl: product.photoUrl,
       quantite: qty,
-      personnalisations: persos
-        .filter((p) => selected.includes(p.id))
-        .map((p) => ({ id: p.id, libelle: p.libelle, prixSupplementaire: p.prixSupplementaire })),
+      personnalisations: persos.filter((p: any) => selected.includes(String(p.id))).map((p: any) => ({
+        id: String(p.id), libelle: p.libelle, prixSupplementaire: p.prixSupplementaire || 0,
+      })),
       messageGateau: message,
       allergenes,
     });
@@ -61,18 +58,15 @@ export default function ClientProduitDetail() {
     toast.success('Ajouté au panier');
   };
 
-  const hasMessage = persos.some((p) => selected.includes(p.id) && /message/i.test(p.libelle));
+  const hasMessage = persos.some((p: any) => selected.includes(String(p.id)) && /message/i.test(p.libelle));
 
   return (
     <div className="animate-fade-in pb-32">
       <div className="aspect-[4/3] md:aspect-[16/7] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center relative">
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center hover:bg-card"
-        >
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center hover:bg-card">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <CakeSlice className="w-32 h-32 text-primary/60" />
+        {product.photoUrl ? <img src={product.photoUrl} alt={product.nom} className="w-full h-full object-cover" /> : <CakeSlice className="w-32 h-32 text-primary/60" />}
       </div>
 
       <div className="p-4 md:p-6 space-y-6">
@@ -85,13 +79,13 @@ export default function ClientProduitDetail() {
         {persos.length > 0 && (
           <section className="space-y-3">
             <h2 className="font-display font-semibold">Personnalisations</h2>
-            {persos.map((p) => (
+            {persos.map((p: any) => (
               <label key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary/50">
                 <div className="flex items-center gap-3">
-                  <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggle(p.id)} />
+                  <Checkbox checked={selected.includes(String(p.id))} onCheckedChange={() => toggle(String(p.id))} />
                   <span className="text-sm">{p.libelle}</span>
                 </div>
-                <span className="text-sm font-medium text-primary">+{formatFCFA(p.prixSupplementaire)}</span>
+                <span className="text-sm font-medium text-primary">+{formatFCFA(p.prixSupplementaire || 0)}</span>
               </label>
             ))}
           </section>
@@ -119,7 +113,6 @@ export default function ClientProduitDetail() {
         </div>
       </div>
 
-      {/* Sticky footer */}
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-20">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div>

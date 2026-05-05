@@ -1,37 +1,21 @@
 import { useState } from 'react';
 import { X, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { statutColors } from '@/lib/mockData';
+import { commandeService, paiementService } from '@/lib/services';
+import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 
-interface Commande {
-  id: string;
-  numero: string;
-  clientNom: string;
-  clientTelephone: string;
-  clientEmail: string;
-  statut: string;
-  dateCommande: string;
-  dateLivraisonSouhaitee: string;
-  creneauHoraire: string;
-  modeLivraison: string;
-  adresseLivraison: string;
-  montantTotal: number;
-  paye: number;
-  acompteRequis: number;
-  notesInternes: string;
-  produits: { nom: string; quantite: number; prixTotal: number; messageGateau?: string; personnalisations?: string[] }[];
-}
-
 interface Props {
-  commande: Commande;
+  commande: any;
   onClose: () => void;
-  onChangeStatut: (statut: string) => void;
+  onUpdated?: () => void;
 }
 
 const transitions: Record<string, { next: string; label: string }> = {
@@ -41,18 +25,40 @@ const transitions: Record<string, { next: string; label: string }> = {
   PRETE: { next: 'LIVREE', label: 'Marquer livrée' },
 };
 
-export default function CommandeDetailSheet({ commande, onClose, onChangeStatut }: Props) {
+export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Props) {
   const [notes, setNotes] = useState(commande.notesInternes || '');
   const [statut, setStatut] = useState(commande.statut);
-  const reste = commande.montantTotal - commande.paye;
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const totalPaye = commande.totalPaye ?? commande.paye ?? 0;
+  const reste = (commande.montantTotal || 0) - totalPaye;
   const st = statutColors[commande.statut];
   const transition = transitions[commande.statut];
 
-  const change = (s: string) => {
-    setStatut(s);
-    onChangeStatut(s);
-    toast.success('Statut mis à jour');
-  };
+  const statutMutation = useMutation({
+    mutationFn: (newStatut: string) =>
+      commandeService.changerStatut(commande.id, newStatut, notes),
+    onSuccess: (_, newStatut) => {
+      setStatut(newStatut);
+      toast.success('Statut mis à jour');
+      onUpdated?.();
+    },
+    onError: () => toast.error('Erreur lors du changement de statut'),
+  });
+
+  const paiementMutation = useMutation({
+    mutationFn: (montant: number) =>
+      paiementService.enregistrer({ commandeId: commande.id, montant, methode: 'ESPECES' }),
+    onSuccess: () => {
+      toast.success('Paiement enregistré');
+      setPaymentOpen(false);
+      setPaymentAmount('');
+      onUpdated?.();
+    },
+    onError: () => toast.error("Erreur lors de l'enregistrement"),
+  });
+
+  const change = (s: string) => statutMutation.mutate(s);
 
   return (
     <div className="fixed inset-0 z-50">
@@ -67,35 +73,36 @@ export default function CommandeDetailSheet({ commande, onClose, onChangeStatut 
         </div>
 
         <div className="p-4 space-y-5">
-          {/* Client */}
           <section className="space-y-2">
             <h3 className="font-display font-semibold text-sm">Client</h3>
             <p className="font-medium">{commande.clientNom}</p>
-            <a href={`tel:${commande.clientTelephone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-              <Phone className="w-4 h-4" /> {commande.clientTelephone}
-            </a>
-            <a href={`mailto:${commande.clientEmail}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-              <Mail className="w-4 h-4" /> {commande.clientEmail}
-            </a>
+            {commande.clientTelephone && (
+              <a href={`tel:${commande.clientTelephone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                <Phone className="w-4 h-4" /> {commande.clientTelephone}
+              </a>
+            )}
+            {commande.clientEmail && (
+              <a href={`mailto:${commande.clientEmail}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                <Mail className="w-4 h-4" /> {commande.clientEmail}
+              </a>
+            )}
           </section>
 
-          {/* Products */}
           <section>
             <h3 className="font-display font-semibold text-sm mb-2">Produits</h3>
             <div className="space-y-2">
-              {commande.produits.map((p, i) => (
+              {(commande.produits || []).map((p: any, i: number) => (
                 <div key={i} className="p-3 rounded-lg bg-secondary/40 text-sm">
-                  <div className="flex justify-between"><span className="font-medium">{p.nom} ×{p.quantite}</span><span>{formatFCFA(p.prixTotal)}</span></div>
+                  <div className="flex justify-between"><span className="font-medium">{p.nom} ×{p.quantite}</span><span>{formatFCFA(p.prixTotal || 0)}</span></div>
                   {p.messageGateau && <p className="text-xs text-muted-foreground italic mt-1">Message : "{p.messageGateau}"</p>}
                   {p.personnalisations && p.personnalisations.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-0.5">+ {p.personnalisations.join(', ')}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">+ {(typeof p.personnalisations === 'string' ? p.personnalisations : p.personnalisations.join(', '))}</p>
                   )}
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Delivery */}
           <section className="space-y-1 text-sm">
             <h3 className="font-display font-semibold text-sm mb-1">Livraison</h3>
             <p>📅 {formatDate(commande.dateLivraisonSouhaitee)} — {commande.creneauHoraire}</p>
@@ -106,15 +113,13 @@ export default function CommandeDetailSheet({ commande, onClose, onChangeStatut 
             )}
           </section>
 
-          {/* Payment */}
           <section className="text-sm space-y-1">
             <h3 className="font-display font-semibold mb-1">Paiement</h3>
-            <div className="flex justify-between"><span>Total</span><span className="font-semibold">{formatFCFA(commande.montantTotal)}</span></div>
-            <div className="flex justify-between text-success"><span>Payé</span><span>{formatFCFA(commande.paye)}</span></div>
+            <div className="flex justify-between"><span>Total</span><span className="font-semibold">{formatFCFA(commande.montantTotal || 0)}</span></div>
+            <div className="flex justify-between text-success"><span>Payé</span><span>{formatFCFA(totalPaye)}</span></div>
             {reste > 0 && <div className="flex justify-between text-destructive"><span>Reste</span><span>{formatFCFA(reste)}</span></div>}
           </section>
 
-          {/* Status change */}
           <section>
             <Label>Changer le statut</Label>
             <Select value={statut} onValueChange={change}>
@@ -130,29 +135,44 @@ export default function CommandeDetailSheet({ commande, onClose, onChangeStatut 
             </Select>
           </section>
 
-          {/* Notes */}
           <section>
             <Label>Notes internes</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1" placeholder="Notes non visibles par le client" />
           </section>
 
-          {/* Actions */}
+          {paymentOpen && (
+            <section className="p-3 rounded-lg border border-border space-y-2">
+              <Label>Montant du paiement (FCFA)</Label>
+              <Input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder={String(reste)} />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => paiementMutation.mutate(parseInt(paymentAmount || '0', 10))} disabled={!paymentAmount || paiementMutation.isPending}>
+                  Valider
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setPaymentOpen(false)}>Annuler</Button>
+              </div>
+            </section>
+          )}
+
           <div className="space-y-2">
             {transition && commande.statut !== 'ANNULEE' && (
-              <Button onClick={() => change(transition.next)} className="w-full">{transition.label}</Button>
+              <Button onClick={() => change(transition.next)} disabled={statutMutation.isPending} className="w-full">
+                {transition.label}
+              </Button>
             )}
-            {reste > 0 && (
-              <Button variant="secondary" onClick={() => toast.info('Modal paiement à venir')} className="w-full">
+            {reste > 0 && !paymentOpen && (
+              <Button variant="secondary" onClick={() => setPaymentOpen(true)} className="w-full">
                 Enregistrer un paiement
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={() => window.open(`https://wa.me/${commande.clientTelephone.replace('+', '')}`, '_blank')}
-              className="w-full gap-2"
-            >
-              <MessageCircle className="w-4 h-4" /> Contacter sur WhatsApp
-            </Button>
+            {commande.clientTelephone && (
+              <Button
+                variant="outline"
+                onClick={() => window.open(`https://wa.me/${commande.clientTelephone.replace('+', '')}`, '_blank')}
+                className="w-full gap-2"
+              >
+                <MessageCircle className="w-4 h-4" /> Contacter sur WhatsApp
+              </Button>
+            )}
             {commande.statut !== 'ANNULEE' && commande.statut !== 'LIVREE' && (
               <Button variant="ghost" onClick={() => change('ANNULEE')} className="w-full text-destructive hover:text-destructive">
                 Annuler la commande

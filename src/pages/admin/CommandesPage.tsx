@@ -1,29 +1,36 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Filter, ShoppingBag } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { mockCommandes, statutColors } from '@/lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
+import { commandeService } from '@/lib/services';
+import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [commandes, setCommandes] = useState(mockCommandes);
+  const [selectedId, setSelectedId] = useState<string | number | null>(null);
+  const qc = useQueryClient();
 
-  const filtered = commandes.filter((c) => {
-    const matchSearch = c.clientNom.toLowerCase().includes(search.toLowerCase()) || c.numero.toLowerCase().includes(search.toLowerCase());
-    const matchStatut = statutFilter === 'ALL' || c.statut === statutFilter;
-    return matchSearch && matchStatut;
+  const { data: commandes = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['commandes', statutFilter],
+    queryFn: () => commandeService.listAdmin(statutFilter !== 'ALL' ? { statut: statutFilter } : {}),
   });
 
-  const selected = commandes.find((c) => c.id === selectedId) || null;
+  const filtered = useMemo(() => commandes.filter((c: any) =>
+    (c.clientNom || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.numero || '').toLowerCase().includes(search.toLowerCase())
+  ), [commandes, search]);
 
-  const updateStatut = (id: string, statut: string) => {
-    setCommandes((prev) => prev.map((c) => (c.id === id ? { ...c, statut } : c)));
+  const selected = commandes.find((c: any) => c.id === selectedId) || null;
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['commandes'] });
   };
 
   return (
@@ -55,55 +62,53 @@ export default function CommandesPage() {
         </Select>
       </div>
 
-      <div className="space-y-3">
-        {filtered.map((c) => {
-          const st = statutColors[c.statut];
-          const reste = c.montantTotal - c.paye;
-          return (
-            <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedId(c.id)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <ShoppingBag className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm">{c.numero}</span>
-                        <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
-                        {c.estUrgent && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
+      {isLoading ? <LoadingState /> :
+       isError ? <ErrorState message="Impossible de charger les commandes" onRetry={refetch} /> :
+       filtered.length === 0 ? <EmptyState message="Aucune commande trouvée" icon={ShoppingBag} /> : (
+        <div className="space-y-3">
+          {filtered.map((c: any) => {
+            const st = statutColors[c.statut];
+            const reste = (c.montantTotal || 0) - (c.totalPaye ?? c.paye ?? 0);
+            return (
+              <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedId(c.id)}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <ShoppingBag className="w-5 h-5 text-primary" />
                       </div>
-                      <p className="text-sm text-foreground mt-0.5">{c.clientNom}</p>
-                      <p className="text-xs text-muted-foreground">{c.produits.map((p) => `${p.nom} x${p.quantite}`).join(', ')}</p>
-                      <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {c.dateLivraisonSouhaitee}</p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{c.numero}</span>
+                          <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
+                          {c.estUrgent && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
+                        </div>
+                        <p className="text-sm text-foreground mt-0.5">{c.clientNom}</p>
+                        <p className="text-xs text-muted-foreground">{(c.produits || []).map((p: any) => `${p.nom} x${p.quantite}`).join(', ')}</p>
+                        <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {c.dateLivraisonSouhaitee}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-sm">{formatFCFA(c.montantTotal || 0)}</p>
+                      {reste > 0 ? (
+                        <p className="text-xs text-destructive mt-1">Reste : {formatFCFA(reste)}</p>
+                      ) : (
+                        <p className="text-xs text-success mt-1">Payé ✓</p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-sm">{formatFCFA(c.montantTotal)}</p>
-                    {reste > 0 ? (
-                      <p className="text-xs text-destructive mt-1">Reste : {formatFCFA(reste)}</p>
-                    ) : (
-                      <p className="text-xs text-success mt-1">Payé ✓</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>Aucune commande trouvée</p>
-          </div>
-        )}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {selected && (
         <CommandeDetailSheet
           commande={selected}
           onClose={() => setSelectedId(null)}
-          onChangeStatut={(s) => updateStatut(selected.id, s)}
+          onUpdated={refresh}
         />
       )}
     </div>

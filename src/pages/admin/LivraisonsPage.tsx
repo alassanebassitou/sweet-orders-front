@@ -1,29 +1,48 @@
 import { useState } from 'react';
-import { Phone, MapPin, Check, X as XIcon, Truck } from 'lucide-react';
+import { Phone, MapPin, Check, X as XIcon, Truck, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockCommandes } from '@/lib/mockData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { livraisonService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 
 export default function LivraisonsPage() {
-  const [livraisons, setLivraisons] = useState(
-    mockCommandes
-      .filter((c) => c.modeLivraison === 'LIVRAISON_DOMICILE' && c.statut !== 'ANNULEE')
-      .map((c, i) => ({ ...c, heure: ['09:00', '11:00', '14:00', '16:30'][i % 4], livre: c.statut === 'LIVREE' }))
-  );
+  const qc = useQueryClient();
+  const today = new Date();
+  const [mois, setMois] = useState(today.getMonth() + 1);
+  const [annee, setAnnee] = useState(today.getFullYear());
 
-  const todayDeliveries = livraisons.slice(0, 4);
+  const { data: tournee = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['livraisons-aujourd-hui'],
+    queryFn: livraisonService.aujourdhui,
+  });
 
-  const marquerLivre = (id: string) => {
-    setLivraisons((prev) => prev.map((l) => (l.id === id ? { ...l, livre: true, statut: 'LIVREE' } : l)));
-    toast.success('Livraison marquée comme livrée');
-  };
+  const calendrierQ = useQuery({
+    queryKey: ['livraisons-calendrier', mois, annee],
+    queryFn: () => livraisonService.calendrier(mois, annee),
+  });
 
-  const marquerEchec = (id: string) => {
-    toast.error('Livraison marquée comme échec — à reprogrammer');
-  };
+  const livrerMut = useMutation({
+    mutationFn: (id: any) => livraisonService.livrer(id),
+    onSuccess: () => { toast.success('Livraison validée'); qc.invalidateQueries({ queryKey: ['livraisons-aujourd-hui'] }); },
+    onError: () => toast.error('Erreur'),
+  });
+
+  const [echecOpen, setEchecOpen] = useState<any | null>(null);
+  const [echecRaison, setEchecRaison] = useState('');
+  const [echecNotes, setEchecNotes] = useState('');
+  const echecMut = useMutation({
+    mutationFn: ({ id, raison, notes }: any) => livraisonService.echec(id, raison, notes),
+    onSuccess: () => { toast.success('Échec enregistré'); setEchecOpen(null); qc.invalidateQueries({ queryKey: ['livraisons-aujourd-hui'] }); },
+    onError: () => toast.error('Erreur'),
+  });
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -39,59 +58,88 @@ export default function LivraisonsPage() {
         </TabsList>
 
         <TabsContent value="jour" className="space-y-3 pt-4">
-          {todayDeliveries.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Truck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>Aucune livraison aujourd'hui</p>
-            </div>
-          ) : (
-            todayDeliveries.map((l) => {
-              const reste = l.montantTotal - l.paye;
-              return (
-                <Card key={l.id} className="shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-display text-lg font-semibold text-primary">{l.heure}</span>
-                          <span className="font-medium">{l.clientNom}</span>
-                        </div>
+          {isLoading ? <LoadingState /> :
+           isError ? <ErrorState message="Impossible de charger les livraisons" onRetry={refetch} /> :
+           tournee.length === 0 ? <EmptyState message="Aucune livraison aujourd'hui" icon={Truck} /> :
+           tournee.map((l: any) => {
+            const livre = l.statut === 'LIVREE';
+            return (
+              <Card key={l.id} className="shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-lg font-semibold text-primary">{l.heurePrevue}</span>
+                        <span className="font-medium">{l.clientNom}</span>
+                      </div>
+                      {l.clientTelephone && (
                         <a href={`tel:${l.clientTelephone}`} className="flex items-center gap-1 text-sm text-muted-foreground mt-1 hover:text-primary">
                           <Phone className="w-3.5 h-3.5" /> {l.clientTelephone}
                         </a>
-                        <p className="flex items-start gap-1 text-sm text-muted-foreground mt-1">
-                          <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {l.adresseLivraison}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">{l.produits.map((p) => `${p.nom} ×${p.quantite}`).join(', ')}</p>
-                        {reste > 0 && <p className="text-xs text-destructive font-semibold mt-1">À encaisser : {formatFCFA(reste)}</p>}
-                      </div>
+                      )}
+                      <p className="flex items-start gap-1 text-sm text-muted-foreground mt-1">
+                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {l.adresseLivraison}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{(l.produits || []).join(', ')}</p>
+                      {l.soldeRestant > 0 && <p className="text-xs text-destructive font-semibold mt-1">À encaisser : {formatFCFA(l.soldeRestant)}</p>}
                     </div>
-                    {!l.livre ? (
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="flex-1 gap-2 bg-success hover:bg-success/90" onClick={() => marquerLivre(l.id)}>
-                          <Check className="w-4 h-4" /> Livré
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1 gap-2 text-destructive" onClick={() => marquerEchec(l.id)}>
-                          <XIcon className="w-4 h-4" /> Échec
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-success font-semibold mt-3">✓ Livrée</p>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
+                  </div>
+                  {!livre ? (
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" className="flex-1 gap-2 bg-success hover:bg-success/90" onClick={() => livrerMut.mutate(l.id)}>
+                        <Check className="w-4 h-4" /> Livré
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1 gap-2 text-destructive" onClick={() => setEchecOpen(l)}>
+                        <XIcon className="w-4 h-4" /> Échec
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-success mt-3 font-semibold flex items-center gap-1"><Check className="w-4 h-4" /> Livré</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="calendrier" className="pt-4">
-          <Card><CardContent className="p-8 text-center text-muted-foreground">
-            <p className="font-medium">Vue calendrier mensuelle</p>
-            <p className="text-sm mt-2">Intégration avec composant Calendar — à connecter à l'API</p>
+          <Card><CardContent className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <CalendarIcon className="w-5 h-5 text-primary" />
+              <Input type="month" value={`${annee}-${String(mois).padStart(2, '0')}`} onChange={(e) => {
+                const [y, m] = e.target.value.split('-');
+                setAnnee(parseInt(y, 10)); setMois(parseInt(m, 10));
+              }} className="w-48" />
+            </div>
+            {calendrierQ.isLoading ? <LoadingState /> :
+             (calendrierQ.data || []).length === 0 ? <EmptyState message="Aucune livraison ce mois-ci" icon={Truck} /> : (
+              <div className="space-y-2">
+                {calendrierQ.data.map((l: any) => (
+                  <div key={l.id} className="flex justify-between text-sm p-2 border-b border-border">
+                    <span>{l.datePrevue} {l.heurePrevue}</span>
+                    <span className="font-medium">{l.clientNom}</span>
+                    <span className="text-muted-foreground">{l.adresseLivraison}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!echecOpen} onOpenChange={(o) => !o && setEchecOpen(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Signaler un échec de livraison</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Raison</Label><Input value={echecRaison} onChange={(e) => setEchecRaison(e.target.value)} className="mt-1" /></div>
+            <div><Label>Notes</Label><Textarea value={echecNotes} onChange={(e) => setEchecNotes(e.target.value)} className="mt-1" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEchecOpen(null)}>Annuler</Button>
+            <Button onClick={() => echecMut.mutate({ id: echecOpen.id, raison: echecRaison, notes: echecNotes })}>Confirmer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
