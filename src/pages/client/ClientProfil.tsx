@@ -23,18 +23,31 @@ export default function ClientProfil() {
   const [adresse, setAdresse] = useState(user?.adresse || '');
   const [ville, setVille] = useState(user?.ville || '');
 
-  const total = mockCommandes.length;
-  const livrees = mockCommandes.filter((c) => c.statut === 'LIVREE').length;
-  const depense = mockCommandes.reduce((s, c) => s + c.paye, 0);
+  const { data: commandes = [] } = useQuery({
+    queryKey: ['mes-commandes'],
+    queryFn: () => commandeService.mesCommandes(),
+  });
 
-  const save = () => {
-    updateUser({ prenom, nom, telephone, adresse, ville });
-    toast.success('Profil mis à jour');
-  };
+  const total = commandes.length;
+  const livrees = commandes.filter((c: any) => c.statut === 'LIVREE').length;
+  const depense = commandes.reduce((s: number, c: any) => s + (c.totalPaye || c.paye || 0), 0);
 
-  const doLogout = () => {
-    logout();
-    navigate('/login');
+  const updateMutation = useMutation({
+    mutationFn: (payload: any) => userService.updateMe(payload),
+    onSuccess: (data) => {
+      updateUser(data || { prenom, nom, telephone, adresse, ville });
+      toast.success('Profil mis à jour');
+    },
+    onError: () => toast.error('Erreur lors de la mise à jour'),
+  });
+
+  const save = () => updateMutation.mutate({ prenom, nom, telephone, adresse, ville });
+
+  const doLogout = async () => {
+    try { await authService.logout(); } finally {
+      logout();
+      navigate('/login');
+    }
   };
 
   return (
