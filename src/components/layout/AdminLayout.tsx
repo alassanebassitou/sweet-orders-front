@@ -9,19 +9,19 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { path: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-  { path: '/commandes', label: 'Commandes', icon: ShoppingBag },
-  { path: '/clients', label: 'Clients', icon: Users },
-  { path: '/production', label: 'Production', icon: ChefHat },
-  { path: '/livraisons', label: 'Livraisons', icon: Truck },
-  { path: '/catalogue', label: 'Catalogue', icon: CakeSlice },
-  { path: '/finances', label: 'Finances', icon: Wallet },
-  { path: '/parametres', label: 'Paramètres', icon: Settings },
+  { path: '/admin/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+  { path: '/admin/commandes', label: 'Commandes', icon: ShoppingBag },
+  { path: '/admin/clients', label: 'Clients', icon: Users },
+  { path: '/admin/production', label: 'Production', icon: ChefHat },
+  { path: '/admin/livraisons', label: 'Livraisons', icon: Truck },
+  { path: '/admin/catalogue', label: 'Catalogue', icon: CakeSlice },
+  { path: '/admin/finances', label: 'Finances', icon: Wallet },
+  { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
 ];
 
 const mobileNavItems = navItems.slice(0, 5);
 
-export default function AppLayout() {
+export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,9 +30,10 @@ export default function AppLayout() {
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
+  const handleLogout = () => { logout(); navigate('/login'); };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
@@ -40,7 +41,7 @@ export default function AppLayout() {
           </div>
           <div>
             <h1 className="font-display text-lg font-semibold text-foreground leading-tight">Ma Pâtisserie</h1>
-            <p className="text-xs text-muted-foreground">Gestion artisanale</p>
+            <p className="text-xs text-muted-foreground">Admin</p>
           </div>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
@@ -66,16 +67,16 @@ export default function AppLayout() {
               <img src={user.photoUrl} alt="" className="w-9 h-9 rounded-full" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary">
-                {user?.nom?.charAt(0) || 'U'}
+                {user?.nom?.charAt(0) || 'A'}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.nom || 'Utilisateur'}</p>
+              <p className="text-sm font-medium truncate">{user?.nom || 'Admin'}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -84,11 +85,10 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/40" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl animate-slide-in-right flex flex-col">
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <CakeSlice className="w-5 h-5 text-primary" />
@@ -103,9 +103,7 @@ export default function AppLayout() {
                   onClick={() => { navigate(item.path); setSidebarOpen(false); }}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                    isActive(item.path)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-secondary'
+                    isActive(item.path) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -117,9 +115,7 @@ export default function AppLayout() {
         </div>
       )}
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-h-0">
-        {/* Top bar */}
         <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-card">
           <button className="md:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
@@ -127,35 +123,24 @@ export default function AppLayout() {
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/notifications')}
+              onClick={() => navigate('/admin/notifications')}
               className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
             >
-              <Bell className={cn('w-5 h-5', unreadCount > 0 && 'animate-bell-ring')} />
+              <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
-            <div className="md:hidden">
-              {user?.photoUrl ? (
-                <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
-                  {user?.nom?.charAt(0) || 'U'}
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
-        {/* Page content */}
         <div className="flex-1 overflow-y-auto pb-20 md:pb-6">
           <Outlet />
         </div>
       </main>
 
-      {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t border-border z-40">
         <div className="flex justify-around py-2">
           {mobileNavItems.map((item) => (
@@ -164,9 +149,7 @@ export default function AppLayout() {
               onClick={() => navigate(item.path)}
               className={cn(
                 'flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium transition-colors',
-                isActive(item.path)
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
+                isActive(item.path) ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <item.icon className="w-5 h-5" />

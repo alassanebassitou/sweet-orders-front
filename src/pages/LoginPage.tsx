@@ -7,19 +7,28 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
-  // Demo login (replace with real Google OAuth in production)
-  const handleDemoLogin = () => {
-    setAuth(
-      {
-        id: 'demo-user',
-        email: 'patissiere@demo.com',
-        nom: 'Marie Pâtissière',
+  const loginAs = (role: 'ROLE_ADMIN' | 'ROLE_CLIENT') => {
+    if (role === 'ROLE_ADMIN') {
+      setAuth({
+        id: 'admin-1',
+        email: 'admin@mapatisserie.bj',
+        nom: 'Admin Pâtisserie',
         role: 'ROLE_ADMIN',
-        photoUrl: '',
-      },
-      'demo-token'
-    );
-    navigate('/dashboard');
+      }, 'demo-admin-token');
+      navigate('/admin/dashboard');
+    } else {
+      setAuth({
+        id: 'client-1',
+        email: 'client@demo.com',
+        nom: 'Doe',
+        prenom: 'Jane',
+        telephone: '+22997123456',
+        adresse: '12 Rue des Cocotiers',
+        ville: 'Cotonou',
+        role: 'ROLE_CLIENT',
+      }, 'demo-client-token');
+      navigate('/app/home');
+    }
   };
 
   return (
@@ -29,18 +38,17 @@ export default function LoginPage() {
           <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
             <CakeSlice className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground mb-2">Ma Pâtisserie</h1>
-          <p className="text-muted-foreground">Gérez vos commandes, clients et livraisons en toute simplicité</p>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-2">Sweet Orders</h1>
+          <p className="text-muted-foreground">Connectez-vous pour commander</p>
         </div>
 
         <div className="bg-card rounded-2xl shadow-lg border border-border p-8">
           <h2 className="font-display text-xl font-semibold text-center mb-6">Connexion</h2>
 
-          {/* Google OAuth button placeholder */}
           <Button
-            onClick={handleDemoLogin}
+            onClick={() => loginAs('ROLE_CLIENT')}
             variant="outline"
-            className="w-full h-12 text-base font-medium gap-3 border-border hover:bg-secondary"
+            className="w-full h-12 text-base font-medium gap-3"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -51,14 +59,15 @@ export default function LoginPage() {
             Se connecter avec Google
           </Button>
 
-          <div className="mt-4">
-            <Button onClick={handleDemoLogin} className="w-full h-12 text-base">
-              Connexion démo
-            </Button>
+          <div className="my-4 text-center text-xs text-muted-foreground">— Démo —</div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={() => loginAs('ROLE_CLIENT')} className="h-11">Démo Client</Button>
+            <Button onClick={() => loginAs('ROLE_ADMIN')} variant="secondary" className="h-11">Démo Admin</Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center mt-6">
-            Réservé à l'administration de la pâtisserie
+            Les commandes se font côté client. L'admin gère les commandes reçues.
           </p>
         </div>
       </div>

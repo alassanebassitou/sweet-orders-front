@@ -1,42 +1,36 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, ShoppingBag } from 'lucide-react';
+import { Search, Filter, ShoppingBag } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mockCommandes, statutColors } from '@/lib/mockData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import NouvelleCommandeWizard from '@/components/commandes/NouvelleCommandeWizard';
-
-function formatFCFA(n: number) {
-  return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA';
-}
+import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
+import { formatFCFA } from '@/lib/format';
 
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
-  const [showWizard, setShowWizard] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [commandes, setCommandes] = useState(mockCommandes);
 
-  const filtered = mockCommandes.filter((c) => {
+  const filtered = commandes.filter((c) => {
     const matchSearch = c.clientNom.toLowerCase().includes(search.toLowerCase()) || c.numero.toLowerCase().includes(search.toLowerCase());
     const matchStatut = statutFilter === 'ALL' || c.statut === statutFilter;
     return matchSearch && matchStatut;
   });
 
-  if (showWizard) {
-    return <NouvelleCommandeWizard onClose={() => setShowWizard(false)} />;
-  }
+  const selected = commandes.find((c) => c.id === selectedId) || null;
+
+  const updateStatut = (id: string, statut: string) => {
+    setCommandes((prev) => prev.map((c) => (c.id === id ? { ...c, statut } : c)));
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Commandes</h1>
-          <p className="text-muted-foreground text-sm">{mockCommandes.length} commande(s)</p>
-        </div>
-        <Button onClick={() => setShowWizard(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Nouvelle
-        </Button>
+      <div>
+        <h1 className="font-display text-2xl font-bold">Commandes reçues</h1>
+        <p className="text-muted-foreground text-sm">{commandes.length} commande(s) — gérez les commandes envoyées par les clients</p>
       </div>
 
       <div className="flex gap-3 flex-col sm:flex-row">
@@ -64,9 +58,9 @@ export default function CommandesPage() {
       <div className="space-y-3">
         {filtered.map((c) => {
           const st = statutColors[c.statut];
-          const resteAPayer = c.montantTotal - c.paye;
+          const reste = c.montantTotal - c.paye;
           return (
-            <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedId(c.id)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -80,16 +74,15 @@ export default function CommandesPage() {
                         {c.estUrgent && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
                       </div>
                       <p className="text-sm text-foreground mt-0.5">{c.clientNom}</p>
-                      <p className="text-xs text-muted-foreground">{c.produits.map(p => `${p.nom} x${p.quantite}`).join(', ')}</p>
-                      <p className="text-xs text-muted-foreground mt-1">📅 Livraison: {c.dateLivraisonSouhaitee}</p>
+                      <p className="text-xs text-muted-foreground">{c.produits.map((p) => `${p.nom} x${p.quantite}`).join(', ')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {c.dateLivraisonSouhaitee}</p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-bold text-sm">{formatFCFA(c.montantTotal)}</p>
-                    {resteAPayer > 0 && (
-                      <p className="text-xs text-destructive mt-1">Reste: {formatFCFA(resteAPayer)}</p>
-                    )}
-                    {resteAPayer === 0 && (
+                    {reste > 0 ? (
+                      <p className="text-xs text-destructive mt-1">Reste : {formatFCFA(reste)}</p>
+                    ) : (
                       <p className="text-xs text-success mt-1">Payé ✓</p>
                     )}
                   </div>
@@ -105,6 +98,14 @@ export default function CommandesPage() {
           </div>
         )}
       </div>
+
+      {selected && (
+        <CommandeDetailSheet
+          commande={selected}
+          onClose={() => setSelectedId(null)}
+          onChangeStatut={(s) => updateStatut(selected.id, s)}
+        />
+      )}
     </div>
   );
 }
