@@ -51,11 +51,11 @@ export const mockClients = [
 ];
 
 export const mockCommandes = [
-  { id: '1', numero: 'CMD-045', clientId: '1', clientNom: 'Aminata Kone', statut: 'CONFIRMEE', dateCommande: '2026-03-28', dateLivraisonSouhaitee: '2026-04-02', modeLivraison: 'LIVRAISON_DOMICILE', montantTotal: 85000, acompteRequis: 42500, paye: 42500, estUrgent: false, produits: [{ nom: 'Wedding Cake 3 étages', quantite: 1, prixTotal: 85000 }] },
-  { id: '2', numero: 'CMD-044', clientId: '3', clientNom: 'Fatou Diallo', statut: 'EN_PRODUCTION', dateCommande: '2026-03-27', dateLivraisonSouhaitee: '2026-04-01', modeLivraison: 'LIVRAISON_DOMICILE', montantTotal: 36000, acompteRequis: 18000, paye: 18000, estUrgent: false, produits: [{ nom: 'Cupcakes', quantite: 24, prixTotal: 36000 }] },
-  { id: '3', numero: 'CMD-043', clientId: '2', clientNom: 'Marie Sossou', statut: 'PRETE', dateCommande: '2026-03-26', dateLivraisonSouhaitee: '2026-03-31', modeLivraison: 'RETRAIT_SUR_PLACE', montantTotal: 18000, acompteRequis: 9000, paye: 18000, estUrgent: false, produits: [{ nom: 'Tarte aux fruits', quantite: 1, prixTotal: 18000 }] },
-  { id: '4', numero: 'CMD-042', clientId: '4', clientNom: 'Aïcha Bello', statut: 'EN_ATTENTE_CONFIRMATION', dateCommande: '2026-03-25', dateLivraisonSouhaitee: '2026-04-03', modeLivraison: 'LIVRAISON_DOMICILE', montantTotal: 25000, acompteRequis: 12500, paye: 0, estUrgent: true, produits: [{ nom: 'Cake Anniversaire', quantite: 1, prixTotal: 25000 }] },
-  { id: '5', numero: 'CMD-041', clientId: '5', clientNom: 'Grace Adeyemi', statut: 'LIVREE', dateCommande: '2026-03-22', dateLivraisonSouhaitee: '2026-03-29', modeLivraison: 'LIVRAISON_DOMICILE', montantTotal: 45000, acompteRequis: 22500, paye: 45000, estUrgent: false, produits: [{ nom: 'Number Cake 30', quantite: 1, prixTotal: 45000 }] },
+  { id: '1', numero: 'CMD-045', clientId: '1', clientNom: 'Aminata Kone', clientTelephone: '+22997001122', clientEmail: 'aminata@email.com', statut: 'CONFIRMEE', dateCommande: '2026-03-28', dateLivraisonSouhaitee: '2026-04-02', creneauHoraire: 'Après-midi', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '45 Av. Steinmetz, Cotonou', montantTotal: 85000, acompteRequis: 42500, paye: 42500, estUrgent: false, notesInternes: '', produits: [{ nom: 'Wedding Cake 3 étages', quantite: 1, prixTotal: 85000, messageGateau: 'Bon mariage', personnalisations: ['Glaçage premium'] }] },
+  { id: '2', numero: 'CMD-044', clientId: '3', clientNom: 'Fatou Diallo', clientTelephone: '+22995223344', clientEmail: 'fatou.d@email.com', statut: 'EN_PRODUCTION', dateCommande: '2026-03-27', dateLivraisonSouhaitee: '2026-04-01', creneauHoraire: 'Matin', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '78 Bd St Michel, Porto-Novo', montantTotal: 36000, acompteRequis: 18000, paye: 18000, estUrgent: false, notesInternes: 'Sans noix svp', produits: [{ nom: 'Cupcakes', quantite: 24, prixTotal: 36000, messageGateau: '', personnalisations: [] }] },
+  { id: '3', numero: 'CMD-043', clientId: '2', clientNom: 'Marie Sossou', clientTelephone: '+22996112233', clientEmail: 'marie.s@email.com', statut: 'PRETE', dateCommande: '2026-03-26', dateLivraisonSouhaitee: '2026-03-31', creneauHoraire: 'Matin', modeLivraison: 'RETRAIT_SUR_PLACE', adresseLivraison: '', montantTotal: 18000, acompteRequis: 9000, paye: 18000, estUrgent: false, notesInternes: '', produits: [{ nom: 'Tarte aux fruits', quantite: 1, prixTotal: 18000, messageGateau: '', personnalisations: [] }] },
+  { id: '4', numero: 'CMD-042', clientId: '4', clientNom: 'Aïcha Bello', clientTelephone: '+22994334455', clientEmail: 'aicha.b@email.com', statut: 'EN_ATTENTE_CONFIRMATION', dateCommande: '2026-03-25', dateLivraisonSouhaitee: '2026-04-03', creneauHoraire: 'Soirée', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '12 Rue des Palmiers, Parakou', montantTotal: 25000, acompteRequis: 12500, paye: 0, estUrgent: true, notesInternes: '', produits: [{ nom: 'Cake Anniversaire', quantite: 1, prixTotal: 25000, messageGateau: 'Joyeux anniversaire Aïcha', personnalisations: ['Figurines'] }] },
+  { id: '5', numero: 'CMD-041', clientId: '5', clientNom: 'Grace Adeyemi', clientTelephone: '+22993445566', clientEmail: 'grace.a@email.com', statut: 'LIVREE', dateCommande: '2026-03-22', dateLivraisonSouhaitee: '2026-03-29', creneauHoraire: 'Après-midi', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '90 Av. Clozel, Cotonou', montantTotal: 45000, acompteRequis: 22500, paye: 45000, estUrgent: false, notesInternes: '', produits: [{ nom: 'Number Cake 30', quantite: 1, prixTotal: 45000, messageGateau: '30 ans !', personnalisations: [] }] },
 ];
 
 export const mockProduits = [
@@ -67,12 +67,68 @@ export const mockProduits = [
   { id: '6', nom: 'Layer Cake', description: 'Cake multi-couches crème et ganache', prixBase: 25000, categorie: 'CAKE', estActif: true, photoUrl: '' },
 ];
 
+export const mockPersonnalisations: Record<string, { id: string; libelle: string; prixSupplementaire: number; estRequis: boolean }[]> = {
+  '1': [
+    { id: 'p1', libelle: 'Message sur le gâteau', prixSupplementaire: 0, estRequis: false },
+    { id: 'p2', libelle: 'Glaçage premium', prixSupplementaire: 5000, estRequis: false },
+    { id: 'p3', libelle: 'Étage supplémentaire', prixSupplementaire: 15000, estRequis: false },
+  ],
+  '2': [
+    { id: 'p1', libelle: 'Topper personnalisé', prixSupplementaire: 1000, estRequis: false },
+  ],
+  '3': [
+    { id: 'p1', libelle: 'Message sur le gâteau', prixSupplementaire: 0, estRequis: false },
+    { id: 'p2', libelle: 'Décor doré', prixSupplementaire: 3000, estRequis: false },
+  ],
+  '4': [],
+  '5': [
+    { id: 'p1', libelle: 'Message sur le gâteau', prixSupplementaire: 0, estRequis: false },
+    { id: 'p2', libelle: 'Figurines décoratives', prixSupplementaire: 3000, estRequis: false },
+  ],
+  '6': [
+    { id: 'p1', libelle: 'Glaçage premium', prixSupplementaire: 2000, estRequis: false },
+  ],
+};
+
+export const mockDepenses = [
+  { id: '1', categorie: 'INGREDIENTS', montant: 45000, description: 'Farine, sucre, beurre', date: '2026-03-25' },
+  { id: '2', categorie: 'EMBALLAGES', montant: 12000, description: 'Boîtes à gâteaux', date: '2026-03-22' },
+  { id: '3', categorie: 'INGREDIENTS', montant: 28000, description: 'Fruits frais', date: '2026-03-20' },
+  { id: '4', categorie: 'TRANSPORT', montant: 8000, description: 'Carburant livraisons', date: '2026-03-18' },
+  { id: '5', categorie: 'AUTRE', montant: 15000, description: 'Décorations', date: '2026-03-15' },
+];
+
+export const mockZonesLivraison = [
+  { id: '1', nom: 'Cotonou centre', frais: 1500 },
+  { id: '2', nom: 'Cotonou périphérie', frais: 2500 },
+  { id: '3', nom: 'Porto-Novo', frais: 4000 },
+  { id: '4', nom: 'Parakou', frais: 8000 },
+];
+
+export const mockParametres = {
+  nomPatisserie: 'Ma Pâtisserie',
+  telephoneWhatsapp: '+22997000000',
+  email: 'contact@mapatisserie.bj',
+  adresse: 'Cotonou, Bénin',
+  delaiMinimumHeures: 48,
+  pourcentageAcompte: 50,
+  seuilSurchargeProduction: 5,
+  templates: {
+    confirmation: 'Bonjour {Prenom}, votre commande {Numero} est confirmée. Acompte: {Acompte} FCFA.',
+    pretAEtreLivre: 'Bonjour {Prenom}, votre commande est prête ! Livraison prévue le {DateLivraison}.',
+    rappelPaiement: 'Bonjour {Prenom}, un solde de {Solde} FCFA reste dû pour la commande {Numero}.',
+    remerciement: 'Merci {Prenom} pour votre confiance ! À bientôt.',
+  },
+};
+
 export const statutColors: Record<string, { bg: string; text: string; label: string }> = {
   BROUILLON: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Brouillon' },
   EN_ATTENTE_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
   CONFIRMEE: { bg: 'bg-primary/15', text: 'text-primary', label: 'Confirmée' },
   EN_PRODUCTION: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En production' },
-  PRETE: { bg: 'bg-success/15', text: 'text-success', label: 'Prête' },
+  PRETE: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Prête' },
   LIVREE: { bg: 'bg-success/20', text: 'text-success', label: 'Livrée' },
   ANNULEE: { bg: 'bg-destructive/15', text: 'text-destructive', label: 'Annulée' },
 };
+
+export const statutOrder = ['EN_ATTENTE_CONFIRMATION', 'CONFIRMEE', 'EN_PRODUCTION', 'PRETE', 'LIVREE'];
