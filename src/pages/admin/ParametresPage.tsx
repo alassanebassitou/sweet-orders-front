@@ -1,27 +1,53 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { mockParametres, mockZonesLivraison } from '@/lib/mockData';
+import { parametreService } from '@/lib/services';
+import { LoadingState } from '@/components/common/StateViews';
 import { formatFCFA } from '@/lib/format';
 
 export default function ParametresPage() {
-  const [params, setParams] = useState(mockParametres);
-  const [zones, setZones] = useState(mockZonesLivraison);
+  const qc = useQueryClient();
+  const paramsQ = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
+  const zonesQ = useQuery({ queryKey: ['zones'], queryFn: parametreService.zones });
+  const templatesQ = useQuery({ queryKey: ['templates'], queryFn: parametreService.templates });
+
+  const [params, setParams] = useState<any>({});
   const [newZone, setNewZone] = useState({ nom: '', frais: 0 });
 
-  const save = () => toast.success('Paramètres enregistrés');
+  useEffect(() => { if (paramsQ.data) setParams(paramsQ.data); }, [paramsQ.data]);
 
-  const addZone = () => {
-    if (!newZone.nom) return;
-    setZones((p) => [...p, { ...newZone, id: String(p.length + 1) }]);
-    setNewZone({ nom: '', frais: 0 });
-    toast.success('Zone ajoutée');
-  };
+  const updateMut = useMutation({
+    mutationFn: (payload: any) => parametreService.update(payload),
+    onSuccess: () => { toast.success('Paramètres enregistrés'); qc.invalidateQueries({ queryKey: ['parametres'] }); },
+    onError: () => toast.error('Erreur'),
+  });
+
+  const addZoneMut = useMutation({
+    mutationFn: (payload: any) => parametreService.creerZone(payload),
+    onSuccess: () => { toast.success('Zone ajoutée'); setNewZone({ nom: '', frais: 0 }); qc.invalidateQueries({ queryKey: ['zones'] }); },
+    onError: () => toast.error('Erreur'),
+  });
+  const removeZoneMut = useMutation({
+    mutationFn: (id: any) => parametreService.supprimerZone(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['zones'] }),
+    onError: () => toast.error('Erreur'),
+  });
+  const updateTemplateMut = useMutation({
+    mutationFn: ({ id, contenu }: any) => parametreService.updateTemplate(id, contenu),
+    onSuccess: () => { toast.success('Template enregistré'); qc.invalidateQueries({ queryKey: ['templates'] }); },
+    onError: () => toast.error('Erreur'),
+  });
+
+  if (paramsQ.isLoading) return <div className="p-6"><LoadingState /></div>;
+
+  const zones = zonesQ.data || [];
+  const templates = templatesQ.data || [];
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -33,34 +59,35 @@ export default function ParametresPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Pâtisserie</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div><Label>Nom</Label><Input value={params.nomPatisserie} onChange={(e) => setParams({ ...params, nomPatisserie: e.target.value })} className="mt-1" /></div>
+          <div><Label>Nom</Label><Input value={params.nomPatisserie || ''} onChange={(e) => setParams({ ...params, nomPatisserie: e.target.value })} className="mt-1" /></div>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div><Label>Téléphone WhatsApp</Label><Input value={params.telephoneWhatsapp} onChange={(e) => setParams({ ...params, telephoneWhatsapp: e.target.value })} className="mt-1" /></div>
-            <div><Label>Email</Label><Input value={params.email} onChange={(e) => setParams({ ...params, email: e.target.value })} className="mt-1" /></div>
+            <div><Label>Téléphone WhatsApp</Label><Input value={params.telephoneWhatsapp || ''} onChange={(e) => setParams({ ...params, telephoneWhatsapp: e.target.value })} className="mt-1" /></div>
+            <div><Label>Email</Label><Input value={params.email || ''} onChange={(e) => setParams({ ...params, email: e.target.value })} className="mt-1" /></div>
           </div>
-          <div><Label>Adresse</Label><Input value={params.adresse} onChange={(e) => setParams({ ...params, adresse: e.target.value })} className="mt-1" /></div>
+          <div><Label>Adresse</Label><Input value={params.adresse || ''} onChange={(e) => setParams({ ...params, adresse: e.target.value })} className="mt-1" /></div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Configuration commandes</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-3 gap-3">
-          <div><Label>Délai min. (heures)</Label><Input type="number" value={params.delaiMinimumHeures} onChange={(e) => setParams({ ...params, delaiMinimumHeures: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
-          <div><Label>Acompte (%)</Label><Input type="number" value={params.pourcentageAcompte} onChange={(e) => setParams({ ...params, pourcentageAcompte: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
-          <div><Label>Seuil surcharge / jour</Label><Input type="number" value={params.seuilSurchargeProduction} onChange={(e) => setParams({ ...params, seuilSurchargeProduction: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+          <div><Label>Délai min. (heures)</Label><Input type="number" value={params.delaiMinimumHeures || 0} onChange={(e) => setParams({ ...params, delaiMinimumHeures: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+          <div><Label>Acompte (%)</Label><Input type="number" value={params.pourcentageAcompte || 0} onChange={(e) => setParams({ ...params, pourcentageAcompte: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+          <div><Label>Seuil surcharge / jour</Label><Input type="number" value={params.seuilSurchargeProduction || 0} onChange={(e) => setParams({ ...params, seuilSurchargeProduction: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Zones de livraison</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          {zones.map((z) => (
+          {zones.length === 0 && <p className="text-sm text-muted-foreground">Aucune zone</p>}
+          {zones.map((z: any) => (
             <div key={z.id} className="flex items-center justify-between p-2 rounded-lg border border-border">
               <div>
                 <p className="font-medium text-sm">{z.nom}</p>
-                <p className="text-xs text-muted-foreground">{formatFCFA(z.frais)}</p>
+                <p className="text-xs text-muted-foreground">{formatFCFA(z.frais || z.fraisLivraison || 0)}</p>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => setZones((p) => p.filter((x) => x.id !== z.id))}>
+              <Button size="icon" variant="ghost" onClick={() => removeZoneMut.mutate(z.id)}>
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
@@ -68,7 +95,7 @@ export default function ParametresPage() {
           <div className="flex gap-2 pt-2 border-t border-border">
             <Input placeholder="Nom zone" value={newZone.nom} onChange={(e) => setNewZone({ ...newZone, nom: e.target.value })} />
             <Input type="number" placeholder="Frais" value={newZone.frais} onChange={(e) => setNewZone({ ...newZone, frais: parseInt(e.target.value || '0', 10) })} className="w-32" />
-            <Button onClick={addZone} size="icon"><Plus className="w-4 h-4" /></Button>
+            <Button onClick={() => newZone.nom && addZoneMut.mutate(newZone)} size="icon"><Plus className="w-4 h-4" /></Button>
           </div>
         </CardContent>
       </Card>
@@ -76,27 +103,28 @@ export default function ParametresPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Templates WhatsApp</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          {([
-            ['confirmation', 'Confirmation commande'],
-            ['pretAEtreLivre', 'Commande prête'],
-            ['rappelPaiement', 'Rappel paiement'],
-            ['remerciement', 'Remerciement'],
-          ] as const).map(([key, label]) => (
-            <div key={key}>
-              <Label>{label}</Label>
-              <Textarea
-                value={params.templates[key]}
-                onChange={(e) => setParams({ ...params, templates: { ...params.templates, [key]: e.target.value } })}
-                className="mt-1"
-                rows={2}
-              />
-            </div>
+          {templates.length === 0 && <p className="text-sm text-muted-foreground">Aucun template</p>}
+          {templates.map((t: any) => (
+            <TemplateEditor key={t.id} template={t} onSave={(contenu) => updateTemplateMut.mutate({ id: t.id, contenu })} />
           ))}
           <p className="text-xs text-muted-foreground">Variables : {'{Prenom}'}, {'{Numero}'}, {'{Acompte}'}, {'{Solde}'}, {'{DateLivraison}'}</p>
         </CardContent>
       </Card>
 
-      <Button onClick={save} className="gap-2"><Save className="w-4 h-4" /> Enregistrer</Button>
+      <Button onClick={() => updateMut.mutate(params)} disabled={updateMut.isPending} className="gap-2">
+        <Save className="w-4 h-4" /> Enregistrer
+      </Button>
+    </div>
+  );
+}
+
+function TemplateEditor({ template, onSave }: { template: any; onSave: (s: string) => void }) {
+  const [contenu, setContenu] = useState(template.contenu || '');
+  return (
+    <div>
+      <Label>{template.nom || template.code || 'Template'}</Label>
+      <Textarea value={contenu} onChange={(e) => setContenu(e.target.value)} className="mt-1" rows={2} />
+      <Button size="sm" variant="outline" className="mt-1" onClick={() => onSave(contenu)}>Sauvegarder</Button>
     </div>
   );
 }
