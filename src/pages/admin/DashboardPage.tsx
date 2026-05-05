@@ -114,7 +114,7 @@ export default function DashboardPage() {
         <Card className="shadow-sm">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Commandes récentes</CardTitle>
-            <button onClick={() => navigate('/commandes')} className="text-xs text-primary flex items-center gap-1 hover:underline">
+            <button onClick={() => navigate('/admin/commandes')} className="text-xs text-primary flex items-center gap-1 hover:underline">
               Tout voir <ChevronRight className="w-3 h-3" />
             </button>
           </CardHeader>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         <Card className="shadow-sm">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Prochaines livraisons</CardTitle>
-            <button onClick={() => navigate('/livraisons')} className="text-xs text-primary flex items-center gap-1 hover:underline">
+            <button onClick={() => navigate('/admin/livraisons')} className="text-xs text-primary flex items-center gap-1 hover:underline">
               Tout voir <ChevronRight className="w-3 h-3" />
             </button>
           </CardHeader>
