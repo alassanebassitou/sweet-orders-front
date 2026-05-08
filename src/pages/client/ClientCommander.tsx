@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Minus, Plus, Trash2, ShoppingCart, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { commandeService, parametreService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
+import { payWithKkiapay } from '@/lib/kkiapay';
 
 const steps = ['Panier', 'Livraison', 'Personnalisations', 'Récapitulatif', 'Confirmation'];
 
@@ -22,15 +23,21 @@ export default function ClientCommander() {
   const { items, updateQuantite, removeItem, updateItem, clear, getTotal, getItemTotal } = useCartStore();
   const total = getTotal();
 
+  const { data: parametres } = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
+  const pourcentageAcompte = parametres?.pourcentageAcompte ?? 50;
+
   const [step, setStep] = useState(0);
   const [dateLivraison, setDateLivraison] = useState('');
   const [creneau, setCreneau] = useState('matin');
   const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_ON_SITE'>('HOME_DELIVERY');
   const [adresse, setAdresse] = useState(user?.adresse || '');
   const [instructions, setInstructions] = useState('');
-  const [orderNumber, setOrderNumber] = useState('');
+  const [createdCommande, setCreatedCommande] = useState<any>(null);
 
-  const acompteRequis = Math.round(total * mockParametres.pourcentageAcompte / 100);
+  const acompteRequis = useMemo(
+    () => Math.round((total * pourcentageAcompte) / 100),
+    [total, pourcentageAcompte]
+  );
 
   const minDate = (() => {
     const d = new Date();
@@ -44,12 +51,50 @@ export default function ClientCommander() {
     return true;
   };
 
+  const createMutation = useMutation({
+    mutationFn: (payload: any) => commandeService.create(payload),
+    onSuccess: (cmd: any) => {
+      setCreatedCommande(cmd);
+      setStep(4);
+      toast.success('Commande envoyée !');
+    },
+    onError: () => toast.error("Erreur lors de l'envoi de la commande"),
+  });
+
   const handleConfirm = () => {
-    const num = `CMD-2026-${Math.floor(Math.random() * 900 + 100)}`;
-    setOrderNumber(num);
-    setStep(4);
-    toast.success('Commande envoyée !');
-    // TODO: POST /api/v1/commandes
+    const payload = {
+      dateLivraisonSouhaitee: dateLivraison,
+      creneauHoraire: creneau,
+      modeLivraison: mode === 'HOME_DELIVERY' ? 'LIVRAISON_DOMICILE' : 'RETRAIT_SUR_PLACE',
+      adresseLivraison: mode === 'HOME_DELIVERY' ? adresse : undefined,
+      instructionsLivraison: instructions,
+      source: 'APP',
+      produits: items.map((it) => ({
+        produitId: it.produitId,
+        quantite: it.quantite,
+        messageGateau: it.messageGateau,
+        allergenes: it.allergenes,
+        personnalisationIds: it.personnalisations.map((p) => p.id),
+      })),
+    };
+    createMutation.mutate(payload);
+  };
+
+  const handlePayAcompte = () => {
+    if (!createdCommande) return;
+    payWithKkiapay({
+      amount: createdCommande.acompteRequis ?? acompteRequis,
+      commandeId: createdCommande.id,
+      clientInfo: {
+        telephone: user?.telephone,
+        name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+        email: user?.email || '',
+      },
+      onSuccess: () => {
+        clear();
+        navigate(`/app/commandes/${createdCommande.id}`);
+      },
+    });
   };
 
   return (
@@ -216,7 +261,7 @@ export default function ClientCommander() {
               </div>
               <div className="p-3 rounded-lg bg-primary/10 text-sm space-y-1">
                 <div className="flex justify-between font-bold"><span>Total</span><span>{formatFCFA(total)}</span></div>
-                <div className="flex justify-between text-primary"><span>Acompte requis ({mockParametres.pourcentageAcompte}%)</span><span>{formatFCFA(acompteRequis)}</span></div>
+                <div className="flex justify-between text-primary"><span>Acompte requis ({pourcentageAcompte}%)</span><span>{formatFCFA(acompteRequis)}</span></div>
               </div>
             </div>
           )}
@@ -226,11 +271,11 @@ export default function ClientCommander() {
             <div className="text-center py-8 space-y-4">
               <CheckCircle2 className="w-20 h-20 mx-auto text-success" />
               <div>
-                <h2 className="font-display text-2xl font-bold">Commande {orderNumber} envoyée !</h2>
-                <p className="text-muted-foreground mt-1">L'acompte de {formatFCFA(acompteRequis)} est requis pour confirmer.</p>
+                <h2 className="font-display text-2xl font-bold">Commande {createdCommande?.numero} envoyée !</h2>
+                <p className="text-muted-foreground mt-1">L'acompte de {formatFCFA(createdCommande?.acompteRequis ?? acompteRequis)} est requis pour confirmer.</p>
               </div>
               <div className="flex flex-col gap-2 max-w-sm mx-auto">
-                <Button onClick={() => { toast.info('Intégration Kkiapay à venir'); }}>Payer l'acompte maintenant</Button>
+                <Button onClick={handlePayAcompte}>Payer l'acompte maintenant</Button>
                 <Button variant="outline" onClick={() => { clear(); navigate('/app/commandes'); }}>Payer plus tard</Button>
               </div>
             </div>
@@ -249,7 +294,7 @@ export default function ClientCommander() {
               Suivant <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
-            <Button onClick={handleConfirm} className="gap-2 bg-success hover:bg-success/90 text-success-foreground">
+            <Button onClick={handleConfirm} disabled={createMutation.isPending} className="gap-2 bg-success hover:bg-success/90 text-success-foreground">
               <Check className="w-4 h-4" /> Confirmer la commande
             </Button>
           )}

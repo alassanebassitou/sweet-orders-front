@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
+import NouvelleCommandeWizard from '@/components/admin/NouvelleCommandeWizard';
 import { commandeService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
@@ -15,6 +17,7 @@ export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: commandes = [], isLoading, isError, refetch } = useQuery({
@@ -35,9 +38,12 @@ export default function CommandesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Commandes reçues</h1>
-        <p className="text-muted-foreground text-sm">{commandes.length} commande(s) — gérez les commandes envoyées par les clients</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Commandes reçues</h1>
+          <p className="text-muted-foreground text-sm">{commandes.length} commande(s) — gérez les commandes envoyées par les clients</p>
+        </div>
+        <Button onClick={() => setWizardOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Nouvelle commande</Button>
       </div>
 
       <div className="flex gap-3 flex-col sm:flex-row">
@@ -111,6 +117,8 @@ export default function CommandesPage() {
           onUpdated={refresh}
         />
       )}
+
+      <NouvelleCommandeWizard open={wizardOpen} onClose={() => { setWizardOpen(false); refresh(); }} />
     </div>
   );
 }

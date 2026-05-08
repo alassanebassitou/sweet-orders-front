@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,15 @@ import { commandeService } from '@/lib/services';
 import { statutOrder } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
+import { useAuthStore } from '@/stores/authStore';
+import { payWithKkiapay } from '@/lib/kkiapay';
 import { cn } from '@/lib/utils';
 
 export default function ClientCommandeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuthStore();
 
   const { data: cmd, isLoading, isError, refetch } = useQuery({
     queryKey: ['commande', id],
@@ -118,7 +122,25 @@ export default function ClientCommandeDetail() {
           {reste > 0 && (
             <>
               <div className="flex justify-between text-destructive"><span>⚠ Solde restant</span><span className="font-semibold">{formatFCFA(reste)}</span></div>
-              <Button onClick={() => toast.info('Intégration Kkiapay à venir')} className="w-full mt-3">Payer le solde</Button>
+              <Button
+                onClick={() => payWithKkiapay({
+                  amount: reste,
+                  commandeId: cmd.id,
+                  clientInfo: {
+                    telephone: user?.telephone,
+                    name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+                    email: user?.email || '',
+                  },
+                  onSuccess: () => {
+                    qc.invalidateQueries({ queryKey: ['commande', String(cmd.id)] });
+                    qc.invalidateQueries({ queryKey: ['commande-balance', String(cmd.id)] });
+                    toast.success('Solde payé !');
+                  },
+                })}
+                className="w-full mt-3"
+              >
+                Payer le solde ({formatFCFA(reste)})
+              </Button>
             </>
           )}
         </CardContent>

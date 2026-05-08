@@ -15,6 +15,7 @@ export const userService = {
     api.get('/admin/users', { params: search ? { search } : {} }).then(r => r.data),
   update: (id: string | number, payload: any) =>
     api.put(`/admin/users/${id}`, payload).then(r => r.data),
+  create: (payload: any) => api.post('/admin/users', payload).then(r => r.data),
   deactivate: (id: string | number) => api.delete(`/admin/users/${id}`).then(r => r.data),
 };
 
@@ -86,6 +87,8 @@ export const financeService = {
   depenses: (params?: any) => api.get('/expenses', { params }).then(r => r.data),
   creerDepense: (payload: any) => api.post('/expenses', payload).then(r => r.data),
   supprimerDepense: (id: string | number) => api.delete(`/expenses/${id}`).then(r => r.data),
+  depensesParCommande: (commandeId: string | number) =>
+    api.get(`/admin/commandes/${commandeId}/depenses`).then(r => r.data),
   exportCSV: async (debut?: string, fin?: string) => {
     const response = await api.get('/finances/export', {
       params: { debut, fin },

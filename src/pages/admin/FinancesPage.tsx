@@ -21,6 +21,7 @@ export default function FinancesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('ALL');
+  const [linkFilter, setLinkFilter] = useState<'ALL' | 'LIEES' | 'GENERALES'>('ALL');
   const [form, setForm] = useState({ category: 'INGREDIENTS', amount: 0, description: '', expenseDate: new Date().toISOString().split('T')[0] });
 
   const dashQ = useQuery({ queryKey: ['finance-dashboard'], queryFn: financeService.dashboard });
@@ -41,7 +42,12 @@ export default function FinancesPage() {
   });
 
   const dashboard = dashQ.data;
-  const depenses = depQ.data || [];
+  const allDepenses = depQ.data || [];
+  const depenses = allDepenses.filter((d: any) => {
+    if (linkFilter === 'LIEES') return !!d.commandeId;
+    if (linkFilter === 'GENERALES') return !d.commandeId;
+    return true;
+  });
   const months = (dashboard?.monthlyRevenue || []).map((m: any) => ({ mois: m.mois, revenu: m.revenu || 0 }));
   const depByCat = Object.entries(dashboard?.expensesByCategory || {}).map(([category, amount]: any) => ({ category, amount }));
 
@@ -136,13 +142,23 @@ export default function FinancesPage() {
 
         <TabsContent value="depenses" className="space-y-3 pt-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Toutes catégories</SelectItem>
-                {CATEGORIES_DEPENSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Toutes catégories</SelectItem>
+                  {CATEGORIES_DEPENSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={linkFilter} onValueChange={(v) => setLinkFilter(v as any)}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Toutes</SelectItem>
+                  <SelectItem value="LIEES">Liées à une commande</SelectItem>
+                  <SelectItem value="GENERALES">Générales</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={() => setOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Nouvelle dépense</Button>
           </div>
           <Card><CardContent className="p-0">
@@ -151,8 +167,13 @@ export default function FinancesPage() {
              depenses.map((d: any) => (
               <div key={d.id} className="flex items-center justify-between p-3 border-b border-border last:border-0">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-[10px]">{d.category}</Badge>
+                    {d.commandeId && d.numeroCommande && (
+                      <Badge variant="outline" className="text-[10px] cursor-pointer hover:bg-primary/10" onClick={() => qc.invalidateQueries({ queryKey: ['commandes'] })}>
+                        {d.numeroCommande}
+                      </Badge>
+                    )}
                     <span className="text-sm font-medium">{d.description}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{d.expenseDate || d.date}</p>
