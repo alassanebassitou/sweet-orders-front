@@ -38,9 +38,12 @@ export default function CommandesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Commandes reçues</h1>
-        <p className="text-muted-foreground text-sm">{commandes.length} commande(s) — gérez les commandes envoyées par les clients</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Commandes reçues</h1>
+          <p className="text-muted-foreground text-sm">{commandes.length} commande(s) — gérez les commandes envoyées par les clients</p>
+        </div>
+        <Button onClick={() => setWizardOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Nouvelle commande</Button>
       </div>
 
       <div className="flex gap-3 flex-col sm:flex-row">
