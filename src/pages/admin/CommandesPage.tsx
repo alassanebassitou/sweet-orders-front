@@ -17,6 +17,7 @@ export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: commandes = [], isLoading, isError, refetch } = useQuery({
