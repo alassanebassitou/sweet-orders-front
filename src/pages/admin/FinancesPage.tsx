@@ -21,6 +21,7 @@ export default function FinancesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('ALL');
+  const [linkFilter, setLinkFilter] = useState<'ALL' | 'LIEES' | 'GENERALES'>('ALL');
   const [form, setForm] = useState({ category: 'INGREDIENTS', amount: 0, description: '', expenseDate: new Date().toISOString().split('T')[0] });
 
   const dashQ = useQuery({ queryKey: ['finance-dashboard'], queryFn: financeService.dashboard });
