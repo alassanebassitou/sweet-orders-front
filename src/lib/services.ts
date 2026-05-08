@@ -15,6 +15,7 @@ export const userService = {
     api.get('/admin/users', { params: search ? { search } : {} }).then(r => r.data),
   update: (id: string | number, payload: any) =>
     api.put(`/admin/users/${id}`, payload).then(r => r.data),
+  create: (payload: any) => api.post('/admin/users', payload).then(r => r.data),
   deactivate: (id: string | number) => api.delete(`/admin/users/${id}`).then(r => r.data),
 };
 
