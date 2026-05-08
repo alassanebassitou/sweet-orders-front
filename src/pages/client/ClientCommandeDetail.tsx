@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 export default function ClientCommandeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuthStore();
 
   const { data: cmd, isLoading, isError, refetch } = useQuery({
     queryKey: ['commande', id],
