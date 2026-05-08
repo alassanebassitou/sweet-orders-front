@@ -1,7 +1,12 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { Home, CakeSlice, ClipboardList, User, ShoppingCart } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
+import { connectWebSocket, disconnectWebSocket } from '@/lib/websocket';
+import NotificationBell from '@/components/client/NotificationBell';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -11,11 +16,47 @@ const tabs = [
   { path: '/app/profil', label: 'Profil', icon: User },
 ];
 
+const STATUT_MESSAGES: Record<string, string> = {
+  CONFIRMEE: '✅ Votre commande a été confirmée !',
+  CONFIRMED: '✅ Votre commande a été confirmée !',
+  EN_PRODUCTION: '👩‍🍳 Votre cake est en cours de préparation !',
+  IN_PRODUCTION: '👩‍🍳 Votre cake est en cours de préparation !',
+  PRETE: '🎂 Votre commande est prête !',
+  READY: '🎂 Votre commande est prête !',
+  LIVREE: '🚚 Votre commande a été livrée. Merci !',
+  DELIVERED: '🚚 Votre commande a été livrée. Merci !',
+  ANNULEE: '❌ Votre commande a été annulée.',
+  CANCELLED: '❌ Votre commande a été annulée.',
+};
+
 export default function ClientLayout() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const cartCount = useCartStore((s) => s.getCount());
   const location = useLocation();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+    connectWebSocket(
+      user.role,
+      (event) => {
+        if (event?.type === 'STATUT_CHANGED') {
+          const { commandeId, statut, clientEmail } = event.payload || {};
+          if (clientEmail && clientEmail !== user.email) return;
+          const msg = STATUT_MESSAGES[statut];
+          if (msg) toast(msg);
+          qc.invalidateQueries({ queryKey: ['mes-commandes'] });
+          if (commandeId) qc.invalidateQueries({ queryKey: ['commande', String(commandeId)] });
+        }
+      },
+      () => {
+        qc.invalidateQueries({ queryKey: ['notif-count'] });
+        qc.invalidateQueries({ queryKey: ['notifications'] });
+      }
+    );
+    return () => { disconnectWebSocket(); };
+  }, [user, qc]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -44,7 +85,8 @@ export default function ClientLayout() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <NotificationBell />
             <button
               onClick={() => navigate('/app/commander')}
               className="relative p-2 rounded-lg hover:bg-secondary"
@@ -57,7 +99,7 @@ export default function ClientLayout() {
                 </span>
               )}
             </button>
-            <button onClick={() => navigate('/app/profil')} aria-label="Profil">
+            <button onClick={() => navigate('/app/profil')} aria-label="Profil" className="ml-1">
               {user?.photoUrl ? (
                 <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full" />
               ) : (
