@@ -117,6 +117,8 @@ export default function CommandesPage() {
           onUpdated={refresh}
         />
       )}
+
+      <NouvelleCommandeWizard open={wizardOpen} onClose={() => { setWizardOpen(false); refresh(); }} />
     </div>
   );
 }
