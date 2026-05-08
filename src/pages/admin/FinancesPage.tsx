@@ -21,12 +21,12 @@ export default function FinancesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('ALL');
-  const [form, setForm] = useState({ categorie: 'INGREDIENTS', montant: 0, description: '', dateDepense: new Date().toISOString().split('T')[0] });
+  const [form, setForm] = useState({ category: 'INGREDIENTS', amount: 0, description: '', expenseDate: new Date().toISOString().split('T')[0] });
 
   const dashQ = useQuery({ queryKey: ['finance-dashboard'], queryFn: financeService.dashboard });
   const depQ = useQuery({
     queryKey: ['depenses', filter],
-    queryFn: () => financeService.depenses(filter !== 'ALL' ? { categorie: filter } : {}),
+    queryFn: () => financeService.depenses(filter !== 'ALL' ? { category: filter } : {}),
   });
 
   const createMut = useMutation({
@@ -42,8 +42,8 @@ export default function FinancesPage() {
 
   const dashboard = dashQ.data;
   const depenses = depQ.data || [];
-  const months = (dashboard?.revenuParMois || []).map((m: any) => ({ mois: m.mois, revenu: m.revenu || 0 }));
-  const depByCat = Object.entries(dashboard?.depensesParCategorie || {}).map(([categorie, montant]: any) => ({ categorie, montant }));
+  const months = (dashboard?.monthlyRevenue || []).map((m: any) => ({ mois: m.mois, revenu: m.revenu || 0 }));
+  const depByCat = Object.entries(dashboard?.expensesByCategory || {}).map(([category, amount]: any) => ({ category, amount }));
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -67,10 +67,10 @@ export default function FinancesPage() {
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: 'Revenu du mois', value: formatFCFA(dashboard?.revenuMois || 0), color: 'text-primary' },
-                  { label: "Revenu de l'année", value: formatFCFA(dashboard?.revenuAnnee || 0), color: 'text-primary' },
-                  { label: 'Dépenses du mois', value: formatFCFA(dashboard?.totalDepensesMois || 0), color: 'text-destructive' },
-                  { label: 'Bénéfice net', value: formatFCFA(dashboard?.beneficeNetMois || 0), color: (dashboard?.beneficeNetMois || 0) >= 0 ? 'text-success' : 'text-destructive' },
+                  { label: 'Revenu du mois', value: formatFCFA(dashboard?.monthlyRevenue || 0), color: 'text-primary' },
+                  { label: "Revenu de l'année", value: formatFCFA(dashboard?.yearlyRevenue || 0), color: 'text-primary' },
+                  { label: 'Dépenses du mois', value: formatFCFA(dashboard?.monthlyExpenses || 0), color: 'text-destructive' },
+                  { label: 'Bénéfice net', value: formatFCFA(dashboard?.netProfitMonthly || 0), color: (dashboard?.netProfitMonthly || 0) >= 0 ? 'text-success' : 'text-destructive' },
                 ].map((k) => (
                   <Card key={k.label}><CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">{k.label}</p>
@@ -104,10 +104,10 @@ export default function FinancesPage() {
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={depByCat}>
                             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                            <XAxis dataKey="categorie" tick={{ fontSize: 10 }} />
+                            <XAxis dataKey="category" tick={{ fontSize: 10 }} />
                             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v / 1000}k`} />
                             <Tooltip formatter={(v: number) => formatFCFA(v)} />
-                            <Bar dataKey="montant" fill="hsl(18, 45%, 57%)" radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="amount" fill="hsl(18, 45%, 57%)" radius={[6, 6, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       )}
@@ -119,15 +119,15 @@ export default function FinancesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Card><CardContent className="p-4">
                   <p className="text-xs text-muted-foreground">Commandes payées</p>
-                  <p className="font-display text-2xl font-bold text-success mt-1">{dashboard?.commandesPayees || 0}</p>
+                  <p className="font-display text-2xl font-bold text-success mt-1">{dashboard?.paidOrders || 0}</p>
                 </CardContent></Card>
                 <Card><CardContent className="p-4">
                   <p className="text-xs text-muted-foreground">Commandes impayées</p>
-                  <p className="font-display text-2xl font-bold text-warning mt-1">{dashboard?.commandesImpayees || 0}</p>
+                  <p className="font-display text-2xl font-bold text-warning mt-1">{dashboard?.unpaidOrders || 0}</p>
                 </CardContent></Card>
                 <Card><CardContent className="p-4">
                   <p className="text-xs text-muted-foreground">Soldes restants</p>
-                  <p className="font-display text-xl font-bold text-destructive mt-1">{formatFCFA(dashboard?.totalSoldesRestants || 0)}</p>
+                  <p className="font-display text-xl font-bold text-destructive mt-1">{formatFCFA(dashboard?.totalRemainingBalances || 0)}</p>
                 </CardContent></Card>
               </div>
             </>
@@ -152,13 +152,13 @@ export default function FinancesPage() {
               <div key={d.id} className="flex items-center justify-between p-3 border-b border-border last:border-0">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-[10px]">{d.categorie}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{d.category}</Badge>
                     <span className="text-sm font-medium">{d.description}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{d.dateDepense || d.date}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{d.expenseDate || d.date}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{formatFCFA(d.montant)}</span>
+                  <span className="font-semibold">{formatFCFA(d.amount)}</span>
                   <Button size="icon" variant="ghost" onClick={() => removeMut.mutate(d.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -175,14 +175,14 @@ export default function FinancesPage() {
           <div className="space-y-3">
             <div>
               <Label>Catégorie</Label>
-              <Select value={form.categorie} onValueChange={(v) => setForm({ ...form, categorie: v })}>
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>{CATEGORIES_DEPENSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Montant (FCFA)</Label><Input type="number" value={form.montant} onChange={(e) => setForm({ ...form, montant: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+            <div><Label>Montant (FCFA)</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1" /></div>
-            <div><Label>Date</Label><Input type="date" value={form.dateDepense} onChange={(e) => setForm({ ...form, dateDepense: e.target.value })} className="mt-1" /></div>
+            <div><Label>Date</Label><Input type="date" value={form.expenseDate} onChange={(e) => setForm({ ...form, expenseDate: e.target.value })} className="mt-1" /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>

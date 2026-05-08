@@ -14,6 +14,8 @@ export default function NotificationsPage() {
     queryFn: notificationService.list,
   });
 
+  console.log('Notifications:', notifs);
+
   const lireMut = useMutation({
     mutationFn: (id: any) => notificationService.marquerLue(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
@@ -42,13 +44,13 @@ export default function NotificationsPage() {
        notifs.length === 0 ? <EmptyState message="Aucune notification" icon={Bell} /> : (
         <div className="space-y-2">
           {notifs.map((n: any) => (
-            <Card key={n.id} className={cn(!n.estLue && 'border-primary/40 bg-primary/5')}>
+            <Card key={n.id} className={cn(!n.isRead && 'border-primary/40 bg-primary/5')}>
               <CardContent className="p-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">{n.message}</p>
                   <p className="text-xs text-muted-foreground mt-1">{n.type} — {new Date(n.createdAt).toLocaleString('fr-FR')}</p>
                 </div>
-                {!n.estLue && (
+                {!n.isRead && (
                   <Button size="icon" variant="ghost" onClick={() => lireMut.mutate(n.id)}>
                     <Check className="w-4 h-4" />
                   </Button>

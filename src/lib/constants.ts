@@ -1,18 +1,20 @@
 export const statutColors: Record<string, { bg: string; text: string; label: string }> = {
-  EN_ATTENTE_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
-  CONFIRMEE: { bg: 'bg-info/15', text: 'text-info', label: 'Confirmée' },
-  EN_PRODUCTION: { bg: 'bg-primary/15', text: 'text-primary', label: 'En production' },
-  PRETE: { bg: 'bg-accent/15', text: 'text-accent', label: 'Prête' },
-  LIVREE: { bg: 'bg-success/15', text: 'text-success', label: 'Livrée' },
-  ANNULEE: { bg: 'bg-destructive/15', text: 'text-destructive', label: 'Annulée' },
+  PENDING_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
+  CONFIRMED: { bg: 'bg-info/15', text: 'text-info', label: 'Confirmée' },
+  IN_PRODUCTION: { bg: 'bg-primary/15', text: 'text-primary', label: 'En production' },
+  READY: { bg: 'bg-accent/15', text: 'text-accent', label: 'Prête' },
+  DELIVERED: { bg: 'bg-success/15', text: 'text-success', label: 'Livrée' },
+  CANCELLED: { bg: 'bg-destructive/15', text: 'text-destructive', label: 'Annulée' },
 };
 
 export const statutOrder = [
-  'EN_ATTENTE_CONFIRMATION',
-  'CONFIRMEE',
-  'EN_PRODUCTION',
-  'PRETE',
-  'LIVREE',
+  'DRAFT',
+  'PENDING_CONFIRMATION',
+  'CONFIRMED',
+  'IN_PRODUCTION',
+  'READY',
+  'DELIVERED',
+  'CANCELLED',
 ];
 
 export const CATEGORIES = [
@@ -26,8 +28,8 @@ export const CATEGORIES = [
 export const CRENEAUX = ['Matin', 'Après-midi', 'Soirée'];
 
 export const MODES_LIVRAISON = [
-  { value: 'LIVRAISON_DOMICILE', label: 'Livraison à domicile' },
-  { value: 'RETRAIT_SUR_PLACE', label: 'Retrait sur place' },
+  { value: 'HOME_DELIVERY', label: 'Livraison à domicile' },
+  { value: 'COLLECTION_ON_SITE', label: 'Retrait sur place' },
 ];
 
 export const CATEGORIES_DEPENSES = [

@@ -44,7 +44,7 @@ export default function ProductionPage() {
   // Group planning by date
   const byDay: Record<string, any[]> = {};
   (planningQ.data || []).forEach((item: any) => {
-    const d = item.date || item.dateLivraisonSouhaitee;
+    const d = item.date || item.wishDeliveryDate;
     if (!d) return;
     if (!byDay[d]) byDay[d] = [];
     byDay[d].push(item);
@@ -55,10 +55,18 @@ export default function ProductionPage() {
     return d.toISOString().split('T')[0];
   });
 
-  const todayItems: any[] = ficheQ.data || [];
+  const formData = ficheQ.data;
+  const todayItems: any[] = formData?.lines || [];
+  const totalCakes: number = formData?.totalCakes || 0;
+  const isSurcharge: boolean = formData?.surcharge || false;
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
+      {isSurcharge && (
+        <div className="bg-orange-100 border border-orange-300 text-orange-800 px-4 py-2 rounded mb-4">
+          ⚠️ Capacité dépassée — {totalCakes} cakes aujourd'hui
+        </div>
+      )}
       <div>
         <h1 className="font-display text-2xl font-bold">Production</h1>
         <p className="text-muted-foreground text-sm">Planning et fiche du jour</p>
@@ -85,7 +93,7 @@ export default function ProductionPage() {
                       <p className="text-xs mt-2 font-semibold text-primary">{orders.length} cake(s)</p>
                       <div className="mt-2 space-y-1">
                         {orders.slice(0, 3).map((o: any, idx: number) => (
-                          <p key={idx} className="text-[10px] text-muted-foreground truncate">{o.produits?.[0]?.nom || o.produitNom || o.numero}</p>
+                          <p key={idx} className="text-[10px] text-muted-foreground truncate">{o.produits?.[0]?.name || o.productName || o.numero}</p>
                         ))}
                       </div>
                     </CardContent>
@@ -120,24 +128,38 @@ export default function ProductionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {todayItems.flatMap((o: any) =>
-                      (o.produits || [{ nom: o.produitNom, quantite: o.quantite, messageGateau: o.messageGateau }]).map((p: any, i: number) => {
-                        const key = `${o.id}-${i}`;
-                        const done = o.statut === 'PRETE' || o.statut === 'LIVREE';
-                        return (
-                          <tr key={key} className="border-t border-border">
-                            <td className="p-3">
-                              <Checkbox checked={done} onCheckedChange={() => terminerMut.mutate(o.commandeId || o.id)} />
-                            </td>
-                            <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>{p.nom}</td>
-                            <td className="p-3">{p.quantite}</td>
-                            <td className="p-3">{o.clientNom}</td>
-                            <td className="p-3 text-xs text-muted-foreground">{p.messageGateau || '—'}</td>
-                            <td className="p-3 text-xs text-muted-foreground">{o.numero || o.numeroCommande}</td>
-                          </tr>
-                        );
-                      })
-                    )}
+                  {todayItems.flatMap((ligne: any, i: number) => {
+                    const key = `${ligne.commandeId}-${i}`;
+                    const done = ligne.isFinished === true;
+                    return (
+                      <tr key={key} className="border-t border-border">
+                        <td className="p-3">
+                          <Checkbox
+                            checked={done}
+                            onCheckedChange={() =>
+                              terminerMut.mutate(ligne.commandeId)
+                            }
+                          />
+                        </td>
+                        <td className={cn('p-3 font-medium',
+                            done && 'line-through opacity-50')}>
+                          {ligne.productName}
+                        </td>
+                        <td className="p-3">
+                          {ligne.quantity}  
+                        </td>
+                        <td className="p-3">
+                          {ligne.clientName} 
+                        </td>
+                        <td className="p-3 text-xs text-muted-foreground">
+                          {ligne.cakeMessage || '—'}
+                        </td>
+                        <td className="p-3 text-xs text-muted-foreground">
+                          {ligne.noCommande}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   </tbody>
                 </table>
               )}

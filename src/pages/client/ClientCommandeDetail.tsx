@@ -38,9 +38,9 @@ export default function ClientCommandeDetail() {
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
   if (isError || !cmd) return <div className="p-6"><ErrorState message="Commande introuvable" onRetry={refetch} /></div>;
 
-  const currentStep = statutOrder.indexOf(cmd.statut);
+  const currentStep = statutOrder.indexOf(cmd.status);
   const totalPaye = balanceQ.data?.totalPaye ?? cmd.totalPaye ?? cmd.paye ?? 0;
-  const reste = balanceQ.data?.soldeRestant ?? ((cmd.montantTotal || 0) - totalPaye);
+  const reste = balanceQ.data?.soldeRestant ?? ((cmd.totalAmount || 0) - totalPaye);
 
   return (
     <div className="p-4 md:p-6 space-y-5 animate-fade-in">
@@ -79,22 +79,22 @@ export default function ClientCommandeDetail() {
         </CardContent>
       </Card>
 
-      {cmd.statut === 'PRETE' && (
+      {cmd.status === 'READY' && (
         <Card className="bg-purple-50 border-purple-200"><CardContent className="p-4 text-sm text-purple-800">🎉 Votre commande est prête !</CardContent></Card>
       )}
-      {cmd.statut === 'LIVREE' && (
+      {cmd.status === 'DELIVERED' && (
         <Card className="bg-success/10 border-success/30"><CardContent className="p-4 text-sm text-success">✅ Commande livrée. Merci pour votre confiance !</CardContent></Card>
       )}
 
       <Card>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-display font-semibold">Produits</h3>
-          {(cmd.produits || []).map((p: any, i: number) => (
+          {(cmd.products || []).map((p: any, i: number) => (
             <div key={i} className="text-sm">
-              <p className="font-medium">{p.nom} ×{p.quantite}</p>
-              {p.messageGateau && <p className="text-xs text-muted-foreground italic">Message : "{p.messageGateau}"</p>}
-              {p.personnalisations && (typeof p.personnalisations === 'string' ? p.personnalisations : p.personnalisations.length > 0) && (
-                <p className="text-xs text-muted-foreground">Options : {typeof p.personnalisations === 'string' ? p.personnalisations : p.personnalisations.join(', ')}</p>
+              <p className="font-medium">{p.productName} ×{p.quantity}</p>
+              {p.cakeMessage && <p className="text-xs text-muted-foreground italic">Message : "{p.cakeMessage}"</p>}
+              {p.customizationJson && (typeof p.customizationJson === 'string' ? p.customizationJson : p.customizationJson.length > 0) && (
+                <p className="text-xs text-muted-foreground">Options : {typeof p.customizationJson === 'string' ? p.customizationJson : p.customizationJson.join(', ')}</p>
               )}
             </div>
           ))}
@@ -104,16 +104,16 @@ export default function ClientCommandeDetail() {
       <Card>
         <CardContent className="p-4 space-y-1 text-sm">
           <h3 className="font-display font-semibold mb-2">Livraison</h3>
-          <p>📅 {formatDate(cmd.dateLivraisonSouhaitee)}</p>
+          <p>📅 {formatDate(cmd.wishDeliveryDate)}</p>
           <p>🕐 {cmd.creneauHoraire}</p>
-          <p>{cmd.modeLivraison === 'LIVRAISON_DOMICILE' ? `📍 ${cmd.adresseLivraison}` : '🏪 Retrait sur place'}</p>
+          <p>{cmd.deliveryMode === 'HOME_DELIVERY' ? `📍 ${cmd.deliveryAddress}` : '🏪 Retrait sur place'}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="p-4 space-y-1 text-sm">
           <h3 className="font-display font-semibold mb-2">Paiement</h3>
-          <div className="flex justify-between"><span>Montant total</span><span className="font-semibold">{formatFCFA(cmd.montantTotal || 0)}</span></div>
+          <div className="flex justify-between"><span>Montant total</span><span className="font-semibold">{formatFCFA(cmd.totalAmount || 0)}</span></div>
           <div className="flex justify-between text-success"><span>✓ Payé</span><span>{formatFCFA(totalPaye)}</span></div>
           {reste > 0 && (
             <>

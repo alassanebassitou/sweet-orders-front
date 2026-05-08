@@ -4,7 +4,7 @@ export interface Notification {
   id: string;
   type: string;
   message: string;
-  estLue: boolean;
+  isRead: boolean;
   commandeId?: string;
   clientId?: string;
   createdAt: string;
@@ -25,20 +25,20 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   addNotification: (n) =>
     set((s) => ({
       notifications: [n, ...s.notifications],
-      unreadCount: s.unreadCount + (n.estLue ? 0 : 1),
+      unreadCount: s.unreadCount + (n.isRead ? 0 : 1),
     })),
   markAsRead: (id) =>
     set((s) => ({
       notifications: s.notifications.map((n) =>
-        n.id === id ? { ...n, estLue: true } : n
+        n.id === id ? { ...n, isRead: true } : n
       ),
       unreadCount: Math.max(0, s.unreadCount - 1),
     })),
   markAllRead: () =>
     set((s) => ({
-      notifications: s.notifications.map((n) => ({ ...n, estLue: true })),
+      notifications: s.notifications.map((n) => ({ ...n, isRead: true })),
       unreadCount: 0,
     })),
   setNotifications: (ns) =>
-    set({ notifications: ns, unreadCount: ns.filter((n) => !n.estLue).length }),
+    set({ notifications: ns, unreadCount: ns.filter((n) => !n.isRead).length }),
 }));

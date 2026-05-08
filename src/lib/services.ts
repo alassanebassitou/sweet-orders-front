@@ -2,7 +2,7 @@ import api from './api';
 
 // ---- Auth
 export const authService = {
-  google: (idToken: string) => api.post('/auth/google', { idToken }).then(r => r.data),
+  google: (idToken: any) => api.post('/auth/google', { idToken }).then(r => r.data),
   logout: () => api.post('/auth/logout').then(r => r.data).catch(() => null),
   me: () => api.get('/auth/me').then(r => r.data),
 };
@@ -18,38 +18,38 @@ export const userService = {
   deactivate: (id: string | number) => api.delete(`/admin/users/${id}`).then(r => r.data),
 };
 
-// ---- Produits
-export const produitService = {
-  list: () => api.get('/produits').then(r => r.data),
-  get: (id: string | number) => api.get(`/produits/${id}`).then(r => r.data),
-  create: (payload: any) => api.post('/admin/produits', payload).then(r => r.data),
+// ---- Products
+export const productService = {
+  list: () => api.get('/products').then(r => r.data),
+  get: (id: string | number) => api.get(`/products/${id}`).then(r => r.data),
+  create: (payload: any) => api.post('/admin/products', payload).then(r => r.data),
   update: (id: string | number, payload: any) =>
-    api.put(`/admin/produits/${id}`, payload).then(r => r.data),
-  remove: (id: string | number) => api.delete(`/admin/produits/${id}`).then(r => r.data),
+    api.put(`/admin/products/${id}`, payload).then(r => r.data),
+  remove: (id: string | number) => api.delete(`/admin/products/${id}`).then(r => r.data),
   uploadPhoto: (id: string | number, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post(`/admin/produits/${id}/photo`, fd, {
+    return api.post(`/admin/products/${id}/photo`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data);
   },
   getPersonnalisations: (id: string | number) =>
-    api.get(`/produits/${id}/personnalisations`).then(r => r.data),
+    api.get(`/products/${id}/customization`).then(r => r.data),
   addPersonnalisation: (id: string | number, payload: any) =>
-    api.post(`/admin/produits/${id}/personnalisations`, payload).then(r => r.data),
+    api.post(`/admin/products/${id}/customization`, payload).then(r => r.data),
 };
 
 // ---- Commandes
 export const commandeService = {
   listAdmin: (params?: any) => api.get('/admin/commandes', { params }).then(r => r.data),
   get: (id: string | number) => api.get(`/commandes/${id}`).then(r => r.data),
-  mesCommandes: () => api.get('/commandes/mes-commandes').then(r => r.data),
+  mesCommandes: () => api.get('/commandes/my-commandes').then(r => r.data),
   create: (payload: any) => api.post('/commandes', payload).then(r => r.data),
   changerStatut: (id: string | number, statut: string, commentaire?: string) =>
-    api.patch(`/admin/commandes/${id}/statut`, { statut, commentaire }).then(r => r.data),
+    api.patch(`/admin/commandes/${id}/status`, { statut, commentaire }).then(r => r.data),
   balance: (id: string | number) => api.get(`/commandes/${id}/balance`).then(r => r.data),
-  paiements: (id: string | number) => api.get(`/commandes/${id}/paiements`).then(r => r.data),
-  dupliquer: (id: string | number) => api.post(`/commandes/${id}/dupliquer`).then(r => r.data),
+  paiements: (id: string | number) => api.get(`/commandes/${id}/payments`).then(r => r.data),
+  dupliquer: (id: string | number) => api.post(`/commandes/${id}/duplicate`).then(r => r.data),
 };
 
 // ---- Paiements
@@ -60,34 +60,34 @@ export const paiementService = {
 // ---- Production
 export const productionService = {
   planning: (dateDebut: string) =>
-    api.get('/production/planning', { params: { dateDebut } }).then(r => r.data),
+    api.get('/productions/planning', { params: { dateDebut } }).then(r => r.data),
   ficheJour: (date?: string) =>
-    api.get('/production/jour', { params: { date: date || new Date().toISOString().slice(0, 10) } }).then(r => r.data),
+    api.get('/productions/day', { params: { date: date || new Date().toISOString().slice(0, 10) } }).then(r => r.data),
   terminer: (commandeId: string | number) =>
-    api.patch(`/production/${commandeId}/terminer`).then(r => r.data),
+    api.patch(`/productions/${commandeId}/finish`).then(r => r.data),
 };
 
 // ---- Livraisons
-export const livraisonService = {
-  aujourdhui: () => api.get('/admin/livraisons/aujourd-hui').then(r => r.data),
-  livrer: (id: string | number) => api.post(`/admin/livraisons/${id}/livrer`).then(r => r.data),
+export const deliveriesService = {
+  aujourdhui: () => api.get('/deliveries/today').then(r => r.data),
+  livrer: (id: string | number) => api.post(`/deliveries/${id}/delivered`).then(r => r.data),
   echec: (id: string | number, raisonEchec: string, notes?: string) =>
-    api.post(`/admin/livraisons/${id}/echec`, { raisonEchec, notes }).then(r => r.data),
+    api.post(`/deliveries/${id}/failure`, { raisonEchec, notes }).then(r => r.data),
   reprogrammer: (id: string | number, nouvelleDate: string, nouvelleHeure: string) =>
-    api.put(`/admin/livraisons/${id}/reprogrammer`, { nouvelleDate, nouvelleHeure }).then(r => r.data),
-  calendrier: (mois: number, annee: number) =>
-    api.get('/admin/livraisons/calendrier', { params: { mois, annee } }).then(r => r.data),
-  planifier: (payload: any) => api.post('/admin/livraisons', payload).then(r => r.data),
+    api.put(`/deliveries/${id}/reprogrammed`, { nouvelleDate, nouvelleHeure }).then(r => r.data),
+  calendrier: (month: number, year: number) =>
+    api.get('/deliveries/calendar', { params: { month, year } }).then(r => r.data),
+  planifier: (payload: any) => api.post('/deliveries', payload).then(r => r.data),
 };
 
 // ---- Finances
 export const financeService = {
-  dashboard: () => api.get('/admin/finances/dashboard').then(r => r.data),
-  depenses: (params?: any) => api.get('/admin/depenses', { params }).then(r => r.data),
-  creerDepense: (payload: any) => api.post('/admin/depenses', payload).then(r => r.data),
-  supprimerDepense: (id: string | number) => api.delete(`/admin/depenses/${id}`).then(r => r.data),
+  dashboard: () => api.get('/finances/dashboard').then(r => r.data),
+  depenses: (params?: any) => api.get('/expenses', { params }).then(r => r.data),
+  creerDepense: (payload: any) => api.post('/expenses', payload).then(r => r.data),
+  supprimerDepense: (id: string | number) => api.delete(`/expenses/${id}`).then(r => r.data),
   exportCSV: async (debut?: string, fin?: string) => {
-    const response = await api.get('/admin/finances/export', {
+    const response = await api.get('/finances/export', {
       params: { debut, fin },
       responseType: 'blob',
     });
@@ -104,11 +104,11 @@ export const financeService = {
 
 // ---- Paramètres
 export const parametreService = {
-  get: () => api.get('/parametres').then(r => r.data),
-  update: (payload: any) => api.put('/parametres', payload).then(r => r.data),
-  zones: () => api.get('/zones-livraison').then(r => r.data),
-  creerZone: (payload: any) => api.post('/zones-livraison', payload).then(r => r.data),
-  supprimerZone: (id: string | number) => api.delete(`/zones-livraison/${id}`).then(r => r.data),
+  get: () => api.get('/settings').then(r => r.data),
+  update: (payload: any) => api.put('/settings', payload).then(r => r.data),
+  zones: () => api.get('/delivery-zones').then(r => r.data),
+  creerZone: (payload: any) => api.post('/delivery-zones', payload).then(r => r.data),
+  supprimerZone: (id: string | number) => api.delete(`/delivery-zones/${id}`).then(r => r.data),
   templates: () => api.get('/templates-messages').then(r => r.data),
   updateTemplate: (id: string | number, contenu: string) =>
     api.put(`/templates-messages/${id}`, { contenu }).then(r => r.data),
@@ -118,9 +118,9 @@ export const parametreService = {
 export const notificationService = {
   list: () => api.get('/notifications').then(r => r.data),
   count: () => api.get('/notifications/count').then(r => r.data),
-  nonLues: () => api.get('/notifications/non-lues').then(r => r.data),
-  marquerLue: (id: string | number) => api.patch(`/notifications/${id}/lire`).then(r => r.data),
-  marquerToutesLues: () => api.patch('/notifications/lire-tout').then(r => r.data),
+  nonLues: () => api.get('/notifications/unread').then(r => r.data),
+  marquerLue: (id: string | number) => api.patch(`/notifications/${id}/read`).then(r => r.data),
+  marquerToutesLues: () => api.patch('/notifications/read-all').then(r => r.data),
 };
 
 // ---- Kkiapay

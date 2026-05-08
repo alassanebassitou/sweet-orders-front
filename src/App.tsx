@@ -67,7 +67,7 @@ function WebSocketBridge() {
           id: event.id || crypto.randomUUID(),
           type: event.type || 'INFO',
           message: event.message || 'Nouvelle notification',
-          estLue: false,
+          isRead: false,
           createdAt: new Date().toISOString(),
         });
         if (event?.message) toast(event.message);

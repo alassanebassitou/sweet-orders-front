@@ -25,7 +25,7 @@ export default function ClientCommander() {
   const [step, setStep] = useState(0);
   const [dateLivraison, setDateLivraison] = useState('');
   const [creneau, setCreneau] = useState('matin');
-  const [mode, setMode] = useState<'LIVRAISON_DOMICILE' | 'RETRAIT_SUR_PLACE'>('LIVRAISON_DOMICILE');
+  const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_ON_SITE'>('HOME_DELIVERY');
   const [adresse, setAdresse] = useState(user?.adresse || '');
   const [instructions, setInstructions] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
@@ -40,7 +40,7 @@ export default function ClientCommander() {
 
   const canNext = () => {
     if (step === 0) return items.length > 0;
-    if (step === 1) return !!dateLivraison && (mode === 'RETRAIT_SUR_PLACE' || !!adresse);
+    if (step === 1) return !!dateLivraison && (mode === 'COLLECTION_ON_SITE' || !!adresse);
     return true;
   };
 
@@ -145,16 +145,16 @@ export default function ClientCommander() {
                 <Label>Mode</Label>
                 <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2 space-y-2">
                   <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary/50">
-                    <RadioGroupItem value="LIVRAISON_DOMICILE" />
+                    <RadioGroupItem value="HOME_DELIVERY" />
                     <span className="text-sm">Livraison à domicile</span>
                   </label>
                   <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-secondary/50">
-                    <RadioGroupItem value="RETRAIT_SUR_PLACE" />
+                    <RadioGroupItem value="COLLECTION_ON_SITE" />
                     <span className="text-sm">Retrait sur place</span>
                   </label>
                 </RadioGroup>
               </div>
-              {mode === 'LIVRAISON_DOMICILE' && (
+              {mode === 'HOME_DELIVERY' && (
                 <>
                   <div>
                     <Label>Adresse</Label>
@@ -212,7 +212,7 @@ export default function ClientCommander() {
               </div>
               <div className="p-3 rounded-lg bg-secondary/40 text-sm space-y-1">
                 <p>📅 {dateLivraison} — {creneau}</p>
-                <p>{mode === 'LIVRAISON_DOMICILE' ? `📍 ${adresse}` : '🏪 Retrait sur place'}</p>
+                <p>{mode === 'HOME_DELIVERY' ? `📍 ${adresse}` : '🏪 Retrait sur place'}</p>
               </div>
               <div className="p-3 rounded-lg bg-primary/10 text-sm space-y-1">
                 <div className="flex justify-between font-bold"><span>Total</span><span>{formatFCFA(total)}</span></div>

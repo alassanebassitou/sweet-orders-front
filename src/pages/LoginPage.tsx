@@ -16,6 +16,7 @@ export default function LoginPage() {
       toast.error('Token Google manquant.');
       return;
     }
+    console.log('Google credential received:', credentialResponse);
     try {
       setLoading(true);
       const data = await authService.google(credentialResponse.credential);

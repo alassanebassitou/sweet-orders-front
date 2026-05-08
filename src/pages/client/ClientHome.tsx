@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/authStore';
-import { commandeService, produitService } from '@/lib/services';
+import { commandeService, productService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 
@@ -14,10 +14,11 @@ export default function ClientHome() {
   const { user } = useAuthStore();
 
   const cmdsQ = useQuery({ queryKey: ['mes-commandes'], queryFn: commandeService.mesCommandes });
-  const produitsQ = useQuery({ queryKey: ['produits'], queryFn: produitService.list });
+  const produitsQ = useQuery({ queryKey: ['produits'], queryFn: productService.list });
 
-  const activeOrders = (cmdsQ.data || []).filter((c: any) => !['LIVREE', 'ANNULEE'].includes(c.statut)).slice(0, 3);
-  const featured = (produitsQ.data || []).filter((p: any) => p.estActif !== false).slice(0, 3);
+  const activeOrders = (cmdsQ.data || []).filter((c: any) => !['DELIVERED', 'CANCELLED'].includes(c.status)).slice(0, 3);
+  const featured = (produitsQ.data || []).filter((p: any) => p.isActif !== false).slice(0, 3);
+
 
   return (
     <div className="p-4 md:p-6 space-y-8 animate-fade-in">
@@ -50,7 +51,7 @@ export default function ClientHome() {
         ) : (
           <div className="space-y-3">
             {activeOrders.map((c: any) => {
-              const st = statutColors[c.statut];
+              const st = statutColors[c.status];
               return (
                 <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/app/commandes/${c.id}`)}>
                   <CardContent className="p-4 flex items-center justify-between">
@@ -59,10 +60,10 @@ export default function ClientHome() {
                         <span className="font-semibold text-sm">{c.numero}</span>
                         <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">📅 {formatDate(c.dateLivraisonSouhaitee)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">📅 {formatDate(c.wishDeliveryDate)}</p>
                     </div>
                     <div className="text-right flex items-center gap-2">
-                      <span className="font-semibold text-sm">{formatFCFA(c.montantTotal)}</span>
+                      <span className="font-semibold text-sm">{formatFCFA(c.totalAmount)}</span>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </CardContent>
@@ -84,11 +85,11 @@ export default function ClientHome() {
           {featured.map((p: any) => (
             <Card key={p.id} className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/app/catalogue/${p.id}`)}>
               <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                {p.photoUrl ? <img src={p.photoUrl} alt={p.nom} className="w-full h-full object-cover" /> : <CakeSlice className="w-10 h-10 text-primary/60" />}
+                {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="w-full h-full object-cover" /> : <CakeSlice className="w-10 h-10 text-primary/60" />}
               </div>
               <CardContent className="p-3">
-                <h3 className="font-medium text-sm">{p.nom}</h3>
-                <p className="text-xs text-primary font-semibold mt-1">{formatFCFA(p.prixBase)}</p>
+                <h3 className="font-medium text-sm">{p.name}</h3>
+                <p className="text-xs text-primary font-semibold mt-1">{formatFCFA(p.basePrice)}</p>
               </CardContent>
             </Card>
           ))}

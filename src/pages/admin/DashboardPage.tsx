@@ -7,7 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { financeService, commandeService, livraisonService, notificationService } from '@/lib/services';
+import { financeService, commandeService, deliveriesService, notificationService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   const dashboardQ = useQuery({ queryKey: ['finance-dashboard'], queryFn: financeService.dashboard });
   const commandesQ = useQuery({ queryKey: ['commandes'], queryFn: () => commandeService.listAdmin() });
-  const livraisonsQ = useQuery({ queryKey: ['livraisons-aujourd-hui'], queryFn: livraisonService.aujourdhui });
+  const livraisonsQ = useQuery({ queryKey: ['livraisons-aujourd-hui'], queryFn: deliveriesService.aujourdhui });
   const alertesQ = useQuery({ queryKey: ['notifications-non-lues'], queryFn: notificationService.nonLues });
 
   const dashboard = dashboardQ.data;
@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const alertes = alertesQ.data || [];
 
   const commandesEnCours = useMemo(
-    () => commandes.filter((c: any) => !['LIVREE', 'ANNULEE'].includes(c.statut)).length,
+    () => commandes.filter((c: any) => !['DELIVERED', 'CANCELLED'].includes(c.status)).length,
     [commandes]
   );
   const recents = commandes.slice(0, 5);
@@ -54,8 +54,8 @@ export default function DashboardPage() {
   const kpis = [
     { label: 'Commandes en cours', value: commandesEnCours, icon: ShoppingBag, color: 'text-primary' },
     { label: "Livraisons aujourd'hui", value: livraisons.length, icon: Truck, color: 'text-success' },
-    { label: 'Revenus du mois', value: formatFCFA(dashboard?.revenuMois || 0), icon: TrendingUp, color: 'text-primary' },
-    { label: 'Impayés', value: formatFCFA(dashboard?.totalSoldesRestants || 0), icon: Wallet, color: 'text-destructive' },
+    { label: 'Revenus du mois', value: formatFCFA(dashboard?.monthlyRevenue || 0), icon: TrendingUp, color: 'text-primary' },
+    { label: 'Impayés', value: formatFCFA(dashboard?.totalRemainingBalances || 0), icon: Wallet, color: 'text-destructive' },
   ];
 
   return (
@@ -157,17 +157,17 @@ export default function DashboardPage() {
             {recents.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">Aucune commande</p>
             ) : recents.map((c: any) => {
-              const st = statutColors[c.statut];
-              const produit = c.produits?.[0]?.nom || '';
+              const st = statutColors[c.status];
+              const produit = c.products?.[0]?.productName || '';
               return (
                 <div key={c.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{c.clientNom}</p>
+                    <p className="text-sm font-medium truncate">{c.clientName}</p>
                     <p className="text-xs text-muted-foreground truncate">{c.numero} — {produit}</p>
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
                     <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
-                    <p className="text-xs font-medium mt-1">{formatFCFA(c.montantTotal)}</p>
+                    <p className="text-xs font-medium mt-1">{formatFCFA(c.totalAmount)}</p>
                   </div>
                 </div>
               );
@@ -186,17 +186,18 @@ export default function DashboardPage() {
             {livraisons.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">Aucune livraison aujourd'hui</p>
             ) : livraisons.slice(0, 5).map((l: any) => (
+              console.log("Delivery", l),
               <div key={l.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-5 h-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{l.clientNom}</p>
-                  <p className="text-xs text-muted-foreground truncate">{l.adresseLivraison}</p>
+                  <p className="text-sm font-medium truncate">{l.clientName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{l.deliveryAddress}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-primary">{l.heurePrevue}</p>
-                  <p className="text-xs text-muted-foreground truncate max-w-[100px]">{l.produits?.[0]}</p>
+                  <p className="text-sm font-semibold text-primary">{l.expectedHour}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[100px]">{l.products?.[0]}</p>
                 </div>
               </div>
             ))}

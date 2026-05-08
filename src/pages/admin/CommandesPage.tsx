@@ -67,8 +67,8 @@ export default function CommandesPage() {
        filtered.length === 0 ? <EmptyState message="Aucune commande trouvée" icon={ShoppingBag} /> : (
         <div className="space-y-3">
           {filtered.map((c: any) => {
-            const st = statutColors[c.statut];
-            const reste = (c.montantTotal || 0) - (c.totalPaye ?? c.paye ?? 0);
+            const st = statutColors[c.status];
+            const reste = (c.totalAmount || 0) - (c.totalPaye ?? c.paye ?? 0);
             return (
               <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedId(c.id)}>
                 <CardContent className="p-4">
@@ -81,15 +81,15 @@ export default function CommandesPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{c.numero}</span>
                           <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
-                          {c.estUrgent && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
+                          {c.isEmergency && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
                         </div>
-                        <p className="text-sm text-foreground mt-0.5">{c.clientNom}</p>
-                        <p className="text-xs text-muted-foreground">{(c.produits || []).map((p: any) => `${p.nom} x${p.quantite}`).join(', ')}</p>
-                        <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {c.dateLivraisonSouhaitee}</p>
+                        <p className="text-sm text-foreground mt-0.5">{c.clientName}</p>
+                        <p className="text-xs text-muted-foreground">{(c.products || []).map((p: any) => `${p.productName} x${p.quantity}`).join(', ')}</p>
+                        <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {c.wishDeliveryDate}</p>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold text-sm">{formatFCFA(c.montantTotal || 0)}</p>
+                      <p className="font-bold text-sm">{formatFCFA(c.totalAmount || 0)}</p>
                       {reste > 0 ? (
                         <p className="text-xs text-destructive mt-1">Reste : {formatFCFA(reste)}</p>
                       ) : (

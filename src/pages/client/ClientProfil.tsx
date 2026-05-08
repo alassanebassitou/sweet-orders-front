@@ -29,7 +29,7 @@ export default function ClientProfil() {
   });
 
   const total = commandes.length;
-  const livrees = commandes.filter((c: any) => c.statut === 'LIVREE').length;
+  const livrees = commandes.filter((c: any) => c.status === 'DELIVERED').length;
   const depense = commandes.reduce((s: number, c: any) => s + (c.totalPaye || c.paye || 0), 0);
 
   const updateMutation = useMutation({

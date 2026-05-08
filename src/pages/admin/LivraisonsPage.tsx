@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { livraisonService } from '@/lib/services';
+import { deliveriesService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 
@@ -21,16 +21,16 @@ export default function LivraisonsPage() {
 
   const { data: tournee = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['livraisons-aujourd-hui'],
-    queryFn: livraisonService.aujourdhui,
+    queryFn: deliveriesService.aujourdhui,
   });
 
   const calendrierQ = useQuery({
     queryKey: ['livraisons-calendrier', mois, annee],
-    queryFn: () => livraisonService.calendrier(mois, annee),
+    queryFn: () => deliveriesService.calendrier(mois, annee),
   });
 
   const livrerMut = useMutation({
-    mutationFn: (id: any) => livraisonService.livrer(id),
+    mutationFn: (id: any) => deliveriesService.livrer(id),
     onSuccess: () => { toast.success('Livraison validée'); qc.invalidateQueries({ queryKey: ['livraisons-aujourd-hui'] }); },
     onError: () => toast.error('Erreur'),
   });
@@ -39,7 +39,7 @@ export default function LivraisonsPage() {
   const [echecRaison, setEchecRaison] = useState('');
   const [echecNotes, setEchecNotes] = useState('');
   const echecMut = useMutation({
-    mutationFn: ({ id, raison, notes }: any) => livraisonService.echec(id, raison, notes),
+    mutationFn: ({ id, raison, notes }: any) => deliveriesService.echec(id, raison, notes),
     onSuccess: () => { toast.success('Échec enregistré'); setEchecOpen(null); qc.invalidateQueries({ queryKey: ['livraisons-aujourd-hui'] }); },
     onError: () => toast.error('Erreur'),
   });
@@ -62,7 +62,7 @@ export default function LivraisonsPage() {
            isError ? <ErrorState message="Impossible de charger les livraisons" onRetry={refetch} /> :
            tournee.length === 0 ? <EmptyState message="Aucune livraison aujourd'hui" icon={Truck} /> :
            tournee.map((l: any) => {
-            const livre = l.statut === 'LIVREE';
+            const livre = l.status === 'DELIVERED';
             return (
               <Card key={l.id} className="shadow-sm">
                 <CardContent className="p-4">
@@ -70,18 +70,18 @@ export default function LivraisonsPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-display text-lg font-semibold text-primary">{l.heurePrevue}</span>
-                        <span className="font-medium">{l.clientNom}</span>
+                        <span className="font-medium">{l.clientName}</span>
                       </div>
-                      {l.clientTelephone && (
-                        <a href={`tel:${l.clientTelephone}`} className="flex items-center gap-1 text-sm text-muted-foreground mt-1 hover:text-primary">
-                          <Phone className="w-3.5 h-3.5" /> {l.clientTelephone}
+                      {l.clientPhone && (
+                        <a href={`tel:${l.clientPhone}`} className="flex items-center gap-1 text-sm text-muted-foreground mt-1 hover:text-primary">
+                          <Phone className="w-3.5 h-3.5" /> {l.clientPhone}
                         </a>
                       )}
                       <p className="flex items-start gap-1 text-sm text-muted-foreground mt-1">
-                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {l.adresseLivraison}
+                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {l.deliveryAddress}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">{(l.produits || []).join(', ')}</p>
-                      {l.soldeRestant > 0 && <p className="text-xs text-destructive font-semibold mt-1">À encaisser : {formatFCFA(l.soldeRestant)}</p>}
+                      <p className="text-xs text-muted-foreground mt-1">{(l.products || []).join(', ')}</p>
+                      {l.remainingBalance > 0 && <p className="text-xs text-destructive font-semibold mt-1">À encaisser : {formatFCFA(l.remainingBalance)}</p>}
                     </div>
                   </div>
                   {!livre ? (
@@ -116,9 +116,9 @@ export default function LivraisonsPage() {
               <div className="space-y-2">
                 {calendrierQ.data.map((l: any) => (
                   <div key={l.id} className="flex justify-between text-sm p-2 border-b border-border">
-                    <span>{l.datePrevue} {l.heurePrevue}</span>
-                    <span className="font-medium">{l.clientNom}</span>
-                    <span className="text-muted-foreground">{l.adresseLivraison}</span>
+                    <span>{l.expectedDate} {l.expectedHour}</span>
+                    <span className="font-medium">{l.clientName}</span>
+                    <span className="text-muted-foreground">{l.deliveryAddress}</span>
                   </div>
                 ))}
               </div>

@@ -7,8 +7,8 @@ export interface User {
   id?: string;
   userId?: string;
   email: string;
-  nom?: string;
   name?: string;
+  nom?: string;
   prenom?: string;
   telephone?: string;
   adresse?: string;

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { produitService } from '@/lib/services';
+import { productService } from '@/lib/services';
 import { useCartStore } from '@/stores/cartStore';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
@@ -17,8 +17,8 @@ export default function ClientProduitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const productQ = useQuery({ queryKey: ['produit', id], queryFn: () => produitService.get(id!), enabled: !!id });
-  const persosQ = useQuery({ queryKey: ['produit-persos', id], queryFn: () => produitService.getPersonnalisations(id!), enabled: !!id });
+  const productQ = useQuery({ queryKey: ['produit', id], queryFn: () => productService.get(id!), enabled: !!id });
+  const persosQ = useQuery({ queryKey: ['produit-persos', id], queryFn: () => productService.getPersonnalisations(id!), enabled: !!id });
 
   const [selected, setSelected] = useState<string[]>([]);
   const [message, setMessage] = useState('');
