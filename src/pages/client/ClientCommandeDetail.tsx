@@ -122,7 +122,25 @@ export default function ClientCommandeDetail() {
           {reste > 0 && (
             <>
               <div className="flex justify-between text-destructive"><span>⚠ Solde restant</span><span className="font-semibold">{formatFCFA(reste)}</span></div>
-              <Button onClick={() => toast.info('Intégration Kkiapay à venir')} className="w-full mt-3">Payer le solde</Button>
+              <Button
+                onClick={() => payWithKkiapay({
+                  amount: reste,
+                  commandeId: cmd.id,
+                  clientInfo: {
+                    telephone: user?.telephone,
+                    name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+                    email: user?.email || '',
+                  },
+                  onSuccess: () => {
+                    qc.invalidateQueries({ queryKey: ['commande', String(cmd.id)] });
+                    qc.invalidateQueries({ queryKey: ['commande-balance', String(cmd.id)] });
+                    toast.success('Solde payé !');
+                  },
+                })}
+                className="w-full mt-3"
+              >
+                Payer le solde ({formatFCFA(reste)})
+              </Button>
             </>
           )}
         </CardContent>
