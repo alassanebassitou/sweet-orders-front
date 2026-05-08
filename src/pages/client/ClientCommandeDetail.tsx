@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { commandeService } from '@/lib/services';
 import { statutOrder } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
+import { useAuthStore } from '@/stores/authStore';
+import { payWithKkiapay } from '@/lib/kkiapay';
 import { cn } from '@/lib/utils';
 
 export default function ClientCommandeDetail() {
