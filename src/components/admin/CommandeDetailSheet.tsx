@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { commandeService, paiementService } from '@/lib/services';
+import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
+import { commandeService, paiementService, financeService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 
@@ -26,14 +27,36 @@ const transitions: Record<string, { next: string; label: string }> = {
 };
 
 export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Props) {
+  const qc = useQueryClient();
   const [notes, setNotes] = useState(commande.notesInternes || '');
   const [statut, setStatut] = useState(commande.statut);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [depenseOpen, setDepenseOpen] = useState(false);
+
   const totalPaye = commande.totalPaye ?? commande.paye ?? 0;
-  const reste = (commande.montantTotal || 0) - totalPaye;
+  const total = commande.montantTotal ?? commande.totalAmount ?? 0;
+  const reste = total - totalPaye;
   const st = statutColors[commande.statut];
   const transition = transitions[commande.statut];
+
+  const depensesQ = useQuery({
+    queryKey: ['depenses-commande', commande.id],
+    queryFn: () => financeService.depensesParCommande(commande.id),
+    enabled: !!commande.id,
+  });
+  const depenses = depensesQ.data || [];
+  const totalDepenses = depenses.reduce((s: number, d: any) => s + (d.amount ?? d.montant ?? 0), 0);
+  const beneficeNet = total - totalDepenses;
+
+  const removeDepMut = useMutation({
+    mutationFn: (id: any) => financeService.supprimerDepense(id),
+    onSuccess: () => {
+      toast.success('Dépense supprimée');
+      qc.invalidateQueries({ queryKey: ['depenses-commande', commande.id] });
+      qc.invalidateQueries({ queryKey: ['depenses'] });
+    },
+  });
 
   const statutMutation = useMutation({
     mutationFn: (newStatut: string) =>
@@ -48,7 +71,7 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
 
   const paiementMutation = useMutation({
     mutationFn: (montant: number) =>
-      paiementService.enregistrer({ commandeId: commande.id, montant, methode: 'ESPECES' }),
+      paiementService.enregistrer({ commandeId: commande.id, montant, modePaiement: 'ESPECES', typePaiement: 'COMPLEMENT' }),
     onSuccess: () => {
       toast.success('Paiement enregistré');
       setPaymentOpen(false);
@@ -91,9 +114,9 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
           <section>
             <h3 className="font-display font-semibold text-sm mb-2">Produits</h3>
             <div className="space-y-2">
-              {(commande.produits || []).map((p: any, i: number) => (
+              {(commande.produits || commande.products || []).map((p: any, i: number) => (
                 <div key={i} className="p-3 rounded-lg bg-secondary/40 text-sm">
-                  <div className="flex justify-between"><span className="font-medium">{p.nom} ×{p.quantite}</span><span>{formatFCFA(p.prixTotal || 0)}</span></div>
+                  <div className="flex justify-between"><span className="font-medium">{p.nom || p.productName} ×{p.quantite ?? p.quantity}</span><span>{formatFCFA(p.prixTotal || 0)}</span></div>
                   {p.messageGateau && <p className="text-xs text-muted-foreground italic mt-1">Message : "{p.messageGateau}"</p>}
                   {p.personnalisations && p.personnalisations.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-0.5">+ {(typeof p.personnalisations === 'string' ? p.personnalisations : p.personnalisations.join(', '))}</p>
@@ -105,19 +128,44 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
 
           <section className="space-y-1 text-sm">
             <h3 className="font-display font-semibold text-sm mb-1">Livraison</h3>
-            <p>📅 {formatDate(commande.dateLivraisonSouhaitee)} — {commande.creneauHoraire}</p>
-            {commande.modeLivraison === 'LIVRAISON_DOMICILE' ? (
-              <p className="flex items-start gap-1"><MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" /> {commande.adresseLivraison}</p>
+            <p>📅 {formatDate(commande.dateLivraisonSouhaitee || commande.wishDeliveryDate)} — {commande.creneauHoraire}</p>
+            {(commande.modeLivraison === 'LIVRAISON_DOMICILE' || commande.deliveryMode === 'HOME_DELIVERY') ? (
+              <p className="flex items-start gap-1"><MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" /> {commande.adresseLivraison || commande.deliveryAddress}</p>
             ) : (
               <p>🏪 Retrait sur place</p>
             )}
           </section>
 
-          <section className="text-sm space-y-1">
-            <h3 className="font-display font-semibold mb-1">Paiement</h3>
-            <div className="flex justify-between"><span>Total</span><span className="font-semibold">{formatFCFA(commande.montantTotal || 0)}</span></div>
-            <div className="flex justify-between text-success"><span>Payé</span><span>{formatFCFA(totalPaye)}</span></div>
-            {reste > 0 && <div className="flex justify-between text-destructive"><span>Reste</span><span>{formatFCFA(reste)}</span></div>}
+          {/* 💰 Finances de cette commande */}
+          <section className="rounded-lg border border-border p-3 space-y-3 bg-secondary/30">
+            <h3 className="font-display font-semibold text-sm">💰 Finances de cette commande</h3>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between"><span>Montant total</span><span className="font-semibold">{formatFCFA(total)}</span></div>
+              <div className="flex justify-between text-success"><span>Acompte reçu</span><span>{formatFCFA(totalPaye)}</span></div>
+              {reste > 0 && <div className="flex justify-between text-destructive"><span>Solde restant</span><span className="font-semibold">{formatFCFA(reste)}</span></div>}
+            </div>
+            <div className="border-t border-border pt-2 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span>Dépenses liées</span>
+                <span className="font-semibold">{formatFCFA(totalDepenses)}</span>
+              </div>
+              {depenses.map((d: any) => (
+                <div key={d.id} className="flex justify-between text-xs text-muted-foreground pl-2">
+                  <span>- {d.category || d.categorie} : {d.description}</span>
+                  <div className="flex items-center gap-1">
+                    <span>{formatFCFA(d.amount ?? d.montant ?? 0)}</span>
+                    <button onClick={() => removeDepMut.mutate(d.id)} className="text-destructive p-0.5"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between text-sm font-semibold">
+              <span>Bénéfice net</span>
+              <span className={beneficeNet >= 0 ? 'text-success' : 'text-destructive'}>{formatFCFA(beneficeNet)} {beneficeNet >= 0 ? '📈' : '📉'}</span>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setDepenseOpen(true)} className="w-full gap-2">
+              <Plus className="w-4 h-4" /> Ajouter une dépense pour ce gâteau
+            </Button>
           </section>
 
           <section>
@@ -181,6 +229,12 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
           </div>
         </div>
       </div>
+
+      <AjouterDepenseDialog
+        open={depenseOpen}
+        onOpenChange={setDepenseOpen}
+        commandeId={commande.id}
+      />
     </div>
   );
 }
