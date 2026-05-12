@@ -68,7 +68,7 @@ export default function CataloguePage() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: '', description: '', basePrice: 0, category: 'CAKE' });
+    setForm({ name: '', description: '', basePrice: 0, category: categories.length > 0 ? categories[0].name : '' });
     setOpen(true);
   };
   const openEdit = (p: any) => {
