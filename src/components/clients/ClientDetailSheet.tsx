@@ -23,15 +23,15 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
         <div className="p-4 space-y-5">
           <div className="text-center">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary mb-3">
-              {(client.prenom?.charAt(0) || '')}{(client.nom?.charAt(0) || '')}
+              {(client.firstname?.charAt(0) || '')}{(client.lastname?.charAt(0) || '')}
             </div>
-            <h3 className="font-display text-xl font-bold">{client.prenom} {client.nom}</h3>
+            <h3 className="font-display text-xl font-bold">{client.firstname} {client.lastname}</h3>
             {(client.estVip || client.isVIP) && <Badge className="bg-warning/15 text-warning gap-1 mt-2"><Star className="w-3 h-3" /> VIP</Badge>}
           </div>
           <div className="space-y-2 text-sm">
             {client.telephone && <a href={`tel:${client.telephone}`} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary"><Phone className="w-4 h-4 text-primary" />{client.telephone}</a>}
             {client.email && <a href={`mailto:${client.email}`} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary"><Mail className="w-4 h-4 text-primary" />{client.email}</a>}
-            {(client.adresse || client.ville) && <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"><MapPin className="w-4 h-4 text-primary" />{[client.adresse, client.ville].filter(Boolean).join(', ')}</div>}
+            {(client.address || client.city) && <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"><MapPin className="w-4 h-4 text-primary" />{[client.address, client.city].filter(Boolean).join(', ')}</div>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg bg-primary/5 text-center">
@@ -39,7 +39,7 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
               <p className="text-xs text-muted-foreground">Commandes</p>
             </div>
             <div className="p-3 rounded-lg bg-primary/5 text-center">
-              <p className="text-lg font-bold font-display text-primary">{formatFCFA(cmds.reduce((s: number, c: any) => s + (c.montantTotal || 0), 0))}</p>
+              <p className="text-lg font-bold font-display text-primary">{formatFCFA(cmds.reduce((s: number, c: any) => s + (c.totalAmount || 0), 0))}</p>
               <p className="text-xs text-muted-foreground">Total dépensé</p>
             </div>
           </div>
@@ -48,16 +48,16 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
             {cmds.length > 0 ? (
               <div className="space-y-2">
                 {cmds.map((c: any) => {
-                  const st = statutColors[c.statut];
+                  const st = statutColors[c.status];
                   return (
                     <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                       <div>
                         <p className="text-sm font-medium">{c.numero}</p>
-                        <p className="text-xs text-muted-foreground">{c.dateLivraisonSouhaitee}</p>
+                        <p className="text-xs text-muted-foreground">{c.wishDeliveryDate}</p>
                       </div>
                       <div className="text-right">
                         <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
-                        <p className="text-xs font-medium mt-1">{formatFCFA(c.montantTotal || 0)}</p>
+                        <p className="text-xs font-medium mt-1">{formatFCFA(c.totalAmount || 0)}</p>
                       </div>
                     </div>
                   );

@@ -48,7 +48,7 @@ export default function FinancesPage() {
     if (linkFilter === 'GENERALES') return !d.commandeId;
     return true;
   });
-  const months = (dashboard?.monthlyRevenue || []).map((m: any) => ({ mois: m.mois, revenu: m.revenu || 0 }));
+  const months = (dashboard?.revenueByMonth || []).map((m: any) => ({ mois: m.month, revenu: m.revenue || 0 }));
   const depByCat = Object.entries(dashboard?.expensesByCategory || {}).map(([category, amount]: any) => ({ category, amount }));
 
   return (

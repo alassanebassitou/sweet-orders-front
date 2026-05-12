@@ -20,10 +20,10 @@ interface Props {
 }
 
 const transitions: Record<string, { next: string; label: string }> = {
-  EN_ATTENTE_CONFIRMATION: { next: 'CONFIRMEE', label: 'Confirmer' },
-  CONFIRMEE: { next: 'EN_PRODUCTION', label: 'Marquer en production' },
-  EN_PRODUCTION: { next: 'PRETE', label: 'Marquer prête' },
-  PRETE: { next: 'LIVREE', label: 'Marquer livrée' },
+  PENDING_CONFIRMATION: { next: 'CONFIRMED', label: 'Confirmer' },
+  CONFIRMED: { next: 'IN_PRODUCTION', label: 'Marquer en production' },
+  IN_PRODUCTION: { next: 'READY', label: 'Marquer prête' },
+  READY: { next: 'DELIVERED', label: 'Marquer livrée' },
 };
 
 export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Props) {
@@ -98,7 +98,7 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
         <div className="p-4 space-y-5">
           <section className="space-y-2">
             <h3 className="font-display font-semibold text-sm">Client</h3>
-            <p className="font-medium">{commande.clientNom}</p>
+            <p className="font-medium">{commande.clientName}</p>
             {commande.clientTelephone && (
               <a href={`tel:${commande.clientTelephone}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                 <Phone className="w-4 h-4" /> {commande.clientTelephone}
@@ -117,9 +117,9 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
               {(commande.produits || commande.products || []).map((p: any, i: number) => (
                 <div key={i} className="p-3 rounded-lg bg-secondary/40 text-sm">
                   <div className="flex justify-between"><span className="font-medium">{p.nom || p.productName} ×{p.quantite ?? p.quantity}</span><span>{formatFCFA(p.prixTotal || 0)}</span></div>
-                  {p.messageGateau && <p className="text-xs text-muted-foreground italic mt-1">Message : "{p.messageGateau}"</p>}
-                  {p.personnalisations && p.personnalisations.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-0.5">+ {(typeof p.personnalisations === 'string' ? p.personnalisations : p.personnalisations.join(', '))}</p>
+                  {p.cakeMessage && <p className="text-xs text-muted-foreground italic mt-1">Message : "{p.cakeMessage}"</p>}
+                  {p.customizationJson && p.customizationJson.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">+ {(typeof p.customizationJson === 'string' ? p.customizationJson : p.customizationJson.join(', '))}</p>
                   )}
                 </div>
               ))}
@@ -173,12 +173,12 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
             <Select value={statut} onValueChange={change}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="EN_ATTENTE_CONFIRMATION">En attente</SelectItem>
-                <SelectItem value="CONFIRMEE">Confirmée</SelectItem>
-                <SelectItem value="EN_PRODUCTION">En production</SelectItem>
-                <SelectItem value="PRETE">Prête</SelectItem>
-                <SelectItem value="LIVREE">Livrée</SelectItem>
-                <SelectItem value="ANNULEE">Annulée</SelectItem>
+                <SelectItem value="PENDING_CONFIRMATION">En attente</SelectItem>
+                <SelectItem value="CONFIRMED">Confirmée</SelectItem>
+                <SelectItem value="IN_PRODUCTION">En production</SelectItem>
+                <SelectItem value="READY">Prête</SelectItem>
+                <SelectItem value="DELIVERED">Livrée</SelectItem>
+                <SelectItem value="CANCELLED">Annulée</SelectItem>
               </SelectContent>
             </Select>
           </section>
@@ -202,7 +202,7 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
           )}
 
           <div className="space-y-2">
-            {transition && commande.statut !== 'ANNULEE' && (
+            {transition && commande.status !== 'CANCELLED' && (
               <Button onClick={() => change(transition.next)} disabled={statutMutation.isPending} className="w-full">
                 {transition.label}
               </Button>
@@ -221,8 +221,8 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
                 <MessageCircle className="w-4 h-4" /> Contacter sur WhatsApp
               </Button>
             )}
-            {commande.statut !== 'ANNULEE' && commande.statut !== 'LIVREE' && (
-              <Button variant="ghost" onClick={() => change('ANNULEE')} className="w-full text-destructive hover:text-destructive">
+            {commande.status !== 'CANCELLED' && commande.status !== 'DELIVERED' && (
+              <Button variant="ghost" onClick={() => change('CANCELLED')} className="w-full text-destructive hover:text-destructive">
                 Annuler la commande
               </Button>
             )}

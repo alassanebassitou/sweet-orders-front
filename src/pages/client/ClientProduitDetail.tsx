@@ -28,12 +28,12 @@ export default function ClientProduitDetail() {
 
   const addItem = useCartStore((s) => s.addItem);
   const product = productQ.data;
-  const persos = persosQ.data || product?.personnalisations || [];
+  const persos = persosQ.data || product?.customizations || [];
 
   const total = useMemo(() => {
     if (!product) return 0;
-    const supp = persos.filter((p: any) => selected.includes(String(p.id))).reduce((s: number, p: any) => s + (p.prixSupplementaire || 0), 0);
-    return (product.prixBase + supp) * qty;
+    const supp = persos.filter((p: any) => selected.includes(String(p.id))).reduce((s: number, p: any) => s + (p.additionalPrice || 0), 0);
+    return (product.basePrice + supp) * qty;
   }, [product, persos, selected, qty]);
 
   if (productQ.isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -44,12 +44,12 @@ export default function ClientProduitDetail() {
   const handleAdd = () => {
     addItem({
       produitId: String(product.id),
-      nom: product.nom,
-      prixBase: product.prixBase,
+      nom: product.name,
+      prixBase: product.basePrice,
       photoUrl: product.photoUrl,
       quantite: qty,
       personnalisations: persos.filter((p: any) => selected.includes(String(p.id))).map((p: any) => ({
-        id: String(p.id), libelle: p.libelle, prixSupplementaire: p.prixSupplementaire || 0,
+        id: String(p.id), libelle: p.libelle, prixSupplementaire: p.additionalPrice || 0,
       })),
       messageGateau: message,
       allergenes,
@@ -66,14 +66,14 @@ export default function ClientProduitDetail() {
         <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center hover:bg-card">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        {product.photoUrl ? <img src={product.photoUrl} alt={product.nom} className="w-full h-full object-cover" /> : <CakeSlice className="w-32 h-32 text-primary/60" />}
+        {product.photoUrl ? <img src={product.photoUrl} alt={product.name} className="w-full h-full object-cover" /> : <CakeSlice className="w-32 h-32 text-primary/60" />}
       </div>
 
       <div className="p-4 md:p-6 space-y-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold">{product.nom}</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold">{product.name}</h1>
           <p className="text-muted-foreground mt-1">{product.description}</p>
-          <p className="font-semibold text-lg mt-3">Prix de base : {formatFCFA(product.prixBase)}</p>
+          <p className="font-semibold text-lg mt-3">Prix de base : {formatFCFA(product.basePrice)}</p>
         </div>
 
         {persos.length > 0 && (
@@ -85,7 +85,7 @@ export default function ClientProduitDetail() {
                   <Checkbox checked={selected.includes(String(p.id))} onCheckedChange={() => toggle(String(p.id))} />
                   <span className="text-sm">{p.libelle}</span>
                 </div>
-                <span className="text-sm font-medium text-primary">+{formatFCFA(p.prixSupplementaire || 0)}</span>
+                <span className="text-sm font-medium text-primary">+{formatFCFA(p.additionalPrice || 0)}</span>
               </label>
             ))}
           </section>

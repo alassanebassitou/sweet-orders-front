@@ -46,8 +46,8 @@ export const commandeService = {
   get: (id: string | number) => api.get(`/commandes/${id}`).then(r => r.data),
   mesCommandes: () => api.get('/commandes/my-commandes').then(r => r.data),
   create: (payload: any) => api.post('/commandes', payload).then(r => r.data),
-  changerStatut: (id: string | number, statut: string, commentaire?: string) =>
-    api.patch(`/admin/commandes/${id}/status`, { statut, commentaire }).then(r => r.data),
+  changerStatut: (id: string | number, status: any, commentaire?: string) =>
+    api.patch(`/admin/commandes/${id}/status`, { status, commentaire }).then(r => r.data),
   balance: (id: string | number) => api.get(`/commandes/${id}/balance`).then(r => r.data),
   paiements: (id: string | number) => api.get(`/commandes/${id}/payments`).then(r => r.data),
   dupliquer: (id: string | number) => api.post(`/commandes/${id}/duplicate`).then(r => r.data),
@@ -88,7 +88,7 @@ export const financeService = {
   creerDepense: (payload: any) => api.post('/expenses', payload).then(r => r.data),
   supprimerDepense: (id: string | number) => api.delete(`/expenses/${id}`).then(r => r.data),
   depensesParCommande: (commandeId: string | number) =>
-    api.get(`/admin/commandes/${commandeId}/depenses`).then(r => r.data),
+    api.get(`/admin/commandes/${commandeId}/expenses`).then(r => r.data),
   exportCSV: async (debut?: string, fin?: string) => {
     const response = await api.get('/finances/export', {
       params: { debut, fin },

@@ -28,8 +28,8 @@ export default function ClientMesCommandes() {
 
   const filtered = (commandes as any[]).filter((c) => {
     if (tab === 'TOUTES') return true;
-    if (tab === 'EN_COURS') return !['LIVREE', 'ANNULEE'].includes(c.statut);
-    return c.statut === tab;
+    if (tab === 'EN_COURS') return !['DELIVERY', 'CANCELLED'].includes(c.status);
+    return c.status === tab;
   });
 
   return (
@@ -56,9 +56,9 @@ export default function ClientMesCommandes() {
       ) : (
         <div className="space-y-3">
           {filtered.map((c: any) => {
-            const st = statutColors[c.statut];
+            const st = statutColors[c.status];
             const paye = c.totalPaye ?? c.paye ?? 0;
-            const reste = (c.montantTotal || 0) - paye;
+            const reste = (c.totalAmount || 0) - paye;
             return (
               <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/app/commandes/${c.id}`)}>
                 <CardContent className="p-4">
@@ -66,11 +66,11 @@ export default function ClientMesCommandes() {
                     <span className="font-semibold text-sm">{c.numero}</span>
                     <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
                   </div>
-                  <p className="text-sm">{(c.produits || []).map((p: any) => `${p.nom} ×${p.quantite}`).join(', ')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {formatDate(c.dateLivraisonSouhaitee)}</p>
+                  <p className="text-sm">{(c.products || []).map((p: any) => `${p.productName} ×${p.quantity}`).join(', ')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">📅 Livraison : {formatDate(c.wishDeliveryDate)}</p>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <div>
-                      <p className="font-bold text-sm">{formatFCFA(c.montantTotal || 0)}</p>
+                      <p className="font-bold text-sm">{formatFCFA(c.totalAmount || 0)}</p>
                       {reste > 0 && <p className="text-xs text-destructive">Solde : {formatFCFA(reste)}</p>}
                     </div>
                     <Button variant="ghost" size="sm" className="text-xs">Voir détail <ChevronRight className="w-4 h-4" /></Button>

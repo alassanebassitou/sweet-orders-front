@@ -16,7 +16,7 @@ export const mockDashboard = {
     { id: '1', numero: 'CMD-045', client: 'Aminata Kone', produit: 'Wedding Cake 3 étages', montant: 85000, statut: 'CONFIRMEE', dateLivraison: '2026-04-02' },
     { id: '2', numero: 'CMD-044', client: 'Fatou Diallo', produit: 'Cupcakes x24', montant: 36000, statut: 'EN_PRODUCTION', dateLivraison: '2026-04-01' },
     { id: '3', numero: 'CMD-043', client: 'Marie Sossou', produit: 'Tarte aux fruits', montant: 18000, statut: 'PRETE', dateLivraison: '2026-03-31' },
-    { id: '4', numero: 'CMD-042', client: 'Aïcha Bello', produit: 'Cake anniversaire', montant: 25000, statut: 'EN_ATTENTE_CONFIRMATION', dateLivraison: '2026-04-03' },
+    { id: '4', numero: 'CMD-042', client: 'Aïcha Bello', produit: 'Cake anniversaire', montant: 25000, statut: 'PENDING_CONFIRMATION', dateLivraison: '2026-04-03' },
     { id: '5', numero: 'CMD-041', client: 'Grace Adeyemi', produit: 'Number Cake 30', montant: 45000, statut: 'LIVREE', dateLivraison: '2026-03-29' },
   ],
   livraisonsAVenir: [
@@ -54,7 +54,7 @@ export const mockCommandes = [
   { id: '1', numero: 'CMD-045', clientId: '1', clientNom: 'Aminata Kone', clientTelephone: '+22997001122', clientEmail: 'aminata@email.com', statut: 'CONFIRMEE', dateCommande: '2026-03-28', dateLivraisonSouhaitee: '2026-04-02', creneauHoraire: 'Après-midi', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '45 Av. Steinmetz, Cotonou', montantTotal: 85000, acompteRequis: 42500, paye: 42500, estUrgent: false, notesInternes: '', produits: [{ nom: 'Wedding Cake 3 étages', quantite: 1, prixTotal: 85000, messageGateau: 'Bon mariage', personnalisations: ['Glaçage premium'] }] },
   { id: '2', numero: 'CMD-044', clientId: '3', clientNom: 'Fatou Diallo', clientTelephone: '+22995223344', clientEmail: 'fatou.d@email.com', statut: 'EN_PRODUCTION', dateCommande: '2026-03-27', dateLivraisonSouhaitee: '2026-04-01', creneauHoraire: 'Matin', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '78 Bd St Michel, Porto-Novo', montantTotal: 36000, acompteRequis: 18000, paye: 18000, estUrgent: false, notesInternes: 'Sans noix svp', produits: [{ nom: 'Cupcakes', quantite: 24, prixTotal: 36000, messageGateau: '', personnalisations: [] }] },
   { id: '3', numero: 'CMD-043', clientId: '2', clientNom: 'Marie Sossou', clientTelephone: '+22996112233', clientEmail: 'marie.s@email.com', statut: 'PRETE', dateCommande: '2026-03-26', dateLivraisonSouhaitee: '2026-03-31', creneauHoraire: 'Matin', modeLivraison: 'RETRAIT_SUR_PLACE', adresseLivraison: '', montantTotal: 18000, acompteRequis: 9000, paye: 18000, estUrgent: false, notesInternes: '', produits: [{ nom: 'Tarte aux fruits', quantite: 1, prixTotal: 18000, messageGateau: '', personnalisations: [] }] },
-  { id: '4', numero: 'CMD-042', clientId: '4', clientNom: 'Aïcha Bello', clientTelephone: '+22994334455', clientEmail: 'aicha.b@email.com', statut: 'EN_ATTENTE_CONFIRMATION', dateCommande: '2026-03-25', dateLivraisonSouhaitee: '2026-04-03', creneauHoraire: 'Soirée', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '12 Rue des Palmiers, Parakou', montantTotal: 25000, acompteRequis: 12500, paye: 0, estUrgent: true, notesInternes: '', produits: [{ nom: 'Cake Anniversaire', quantite: 1, prixTotal: 25000, messageGateau: 'Joyeux anniversaire Aïcha', personnalisations: ['Figurines'] }] },
+  { id: '4', numero: 'CMD-042', clientId: '4', clientNom: 'Aïcha Bello', clientTelephone: '+22994334455', clientEmail: 'aicha.b@email.com', statut: 'PENDING_CONFIRMATION', dateCommande: '2026-03-25', dateLivraisonSouhaitee: '2026-04-03', creneauHoraire: 'Soirée', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '12 Rue des Palmiers, Parakou', montantTotal: 25000, acompteRequis: 12500, paye: 0, estUrgent: true, notesInternes: '', produits: [{ nom: 'Cake Anniversaire', quantite: 1, prixTotal: 25000, messageGateau: 'Joyeux anniversaire Aïcha', personnalisations: ['Figurines'] }] },
   { id: '5', numero: 'CMD-041', clientId: '5', clientNom: 'Grace Adeyemi', clientTelephone: '+22993445566', clientEmail: 'grace.a@email.com', statut: 'LIVREE', dateCommande: '2026-03-22', dateLivraisonSouhaitee: '2026-03-29', creneauHoraire: 'Après-midi', modeLivraison: 'LIVRAISON_DOMICILE', adresseLivraison: '90 Av. Clozel, Cotonou', montantTotal: 45000, acompteRequis: 22500, paye: 45000, estUrgent: false, notesInternes: '', produits: [{ nom: 'Number Cake 30', quantite: 1, prixTotal: 45000, messageGateau: '30 ans !', personnalisations: [] }] },
 ];
 
@@ -123,7 +123,7 @@ export const mockParametres = {
 
 export const statutColors: Record<string, { bg: string; text: string; label: string }> = {
   BROUILLON: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Brouillon' },
-  EN_ATTENTE_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
+  PENDING_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
   CONFIRMEE: { bg: 'bg-primary/15', text: 'text-primary', label: 'Confirmée' },
   EN_PRODUCTION: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En production' },
   PRETE: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Prête' },
@@ -131,4 +131,4 @@ export const statutColors: Record<string, { bg: string; text: string; label: str
   ANNULEE: { bg: 'bg-destructive/15', text: 'text-destructive', label: 'Annulée' },
 };
 
-export const statutOrder = ['EN_ATTENTE_CONFIRMATION', 'CONFIRMEE', 'EN_PRODUCTION', 'PRETE', 'LIVREE'];
+export const statutOrder = ['PENDING_CONFIRMATION', 'CONFIRMEE', 'EN_PRODUCTION', 'PRETE', 'LIVREE'];

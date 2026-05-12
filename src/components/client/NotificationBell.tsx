@@ -73,8 +73,8 @@ export default function NotificationBell() {
                 )}
               >
                 <p className="text-sm">{n.message || n.titre}</p>
-                {n.dateCreation && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{n.dateCreation}</p>
+                {n.createdAt && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{n.createdAt}</p>
                 )}
               </button>
             ))

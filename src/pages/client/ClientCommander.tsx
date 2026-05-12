@@ -24,7 +24,7 @@ export default function ClientCommander() {
   const total = getTotal();
 
   const { data: parametres } = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
-  const pourcentageAcompte = parametres?.pourcentageAcompte ?? 50;
+  const pourcentageAcompte = parametres?.depositPercentage ?? 50;
 
   const [step, setStep] = useState(0);
   const [dateLivraison, setDateLivraison] = useState('');
@@ -63,18 +63,27 @@ export default function ClientCommander() {
 
   const handleConfirm = () => {
     const payload = {
-      dateLivraisonSouhaitee: dateLivraison,
+      wishDeliveryDate: dateLivraison,
       creneauHoraire: creneau,
-      modeLivraison: mode === 'HOME_DELIVERY' ? 'LIVRAISON_DOMICILE' : 'RETRAIT_SUR_PLACE',
-      adresseLivraison: mode === 'HOME_DELIVERY' ? adresse : undefined,
-      instructionsLivraison: instructions,
+      deliveryMode: mode === 'HOME_DELIVERY' ? 'HOME_DELIVERY' : 'COLLECTION_ON_SITE',
+      deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
+      deliveryInstruction: instructions,
       source: 'APP',
-      produits: items.map((it) => ({
-        produitId: it.produitId,
-        quantite: it.quantite,
-        messageGateau: it.messageGateau,
-        allergenes: it.allergenes,
-        personnalisationIds: it.personnalisations.map((p) => p.id),
+      productRequests: items.map((it) => ({
+        productId: it.produitId,
+        quantity: it.quantite,
+        cakeMessage: it.messageGateau,
+        allergen: it.allergenes,
+        customizationJson: it.personnalisations.length > 0
+        ? Object.fromEntries(
+            it.personnalisations.map((p) => [
+              p.libelle,
+              p.prixSupplementaire > 0
+                ? `${p.libelle} (+${p.prixSupplementaire} FCFA)`
+                : p.libelle
+            ])
+          )
+        : null,
       })),
     };
     createMutation.mutate(payload);

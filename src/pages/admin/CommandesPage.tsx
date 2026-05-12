@@ -22,11 +22,11 @@ export default function CommandesPage() {
 
   const { data: commandes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['commandes', statutFilter],
-    queryFn: () => commandeService.listAdmin(statutFilter !== 'ALL' ? { statut: statutFilter } : {}),
+    queryFn: () => commandeService.listAdmin(statutFilter !== 'ALL' ? { status: statutFilter } : {}),
   });
 
   const filtered = useMemo(() => commandes.filter((c: any) =>
-    (c.clientNom || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.clientName || '').toLowerCase().includes(search.toLowerCase()) ||
     (c.numero || '').toLowerCase().includes(search.toLowerCase())
   ), [commandes, search]);
 
@@ -58,12 +58,12 @@ export default function CommandesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Tous les statuts</SelectItem>
-            <SelectItem value="EN_ATTENTE_CONFIRMATION">En attente</SelectItem>
-            <SelectItem value="CONFIRMEE">Confirmée</SelectItem>
-            <SelectItem value="EN_PRODUCTION">En production</SelectItem>
-            <SelectItem value="PRETE">Prête</SelectItem>
-            <SelectItem value="LIVREE">Livrée</SelectItem>
-            <SelectItem value="ANNULEE">Annulée</SelectItem>
+            <SelectItem value="PENDING_CONFIRMATION">En attente</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmée</SelectItem>
+            <SelectItem value="IN_PRODUCTION">En production</SelectItem>
+            <SelectItem value="READY">Prête</SelectItem>
+            <SelectItem value="DELIVERED">Livrée</SelectItem>
+            <SelectItem value="CANCELLED">Annulée</SelectItem>
           </SelectContent>
         </Select>
       </div>

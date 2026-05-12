@@ -29,12 +29,12 @@ const MODES_PAIEMENT = [
 
 interface LigneProduit {
   produitId: any;
-  nom: string;
-  prix: number;
-  quantite: number;
-  messageGateau?: string;
-  allergenes?: string;
-  personnalisations?: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  cakeMessage?: string;
+  allergen?: string;
+  customizationsJson?: string;
 }
 
 export default function NouvelleCommandeWizard({ open, onClose }: Props) {
@@ -55,7 +55,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   // Step 3 — Livraison
   const [dateLivraison, setDateLivraison] = useState('');
   const [creneau, setCreneau] = useState('matin');
-  const [mode, setMode] = useState<'LIVRAISON_DOMICILE' | 'RETRAIT_SUR_PLACE'>('LIVRAISON_DOMICILE');
+  const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_IN_SITE'>('HOME_DELIVERY');
   const [adresse, setAdresse] = useState('');
   const [instructions, setInstructions] = useState('');
 
@@ -90,14 +90,14 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     onError: () => toast.error('Erreur création client'),
   });
 
-  const total = lignes.reduce((s, l) => s + l.prix * l.quantite, 0);
+  const total = lignes.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
 
   const reset = () => {
     setStep(0);
     setSearch(''); setSelectedClient(null); setCreatingClient(false);
     setNewClient({ nom: '', prenom: '', telephone: '', email: '', adresse: '', ville: '' });
     setLignes([]);
-    setDateLivraison(''); setCreneau('matin'); setMode('LIVRAISON_DOMICILE'); setAdresse(''); setInstructions('');
+    setDateLivraison(''); setCreneau('matin'); setMode('HOME_DELIVERY'); setAdresse(''); setInstructions('');
     setAcompteRecu('non');
     setPaiement({ montant: 0, modePaiement: 'ESPECES', datePaiement: new Date().toISOString().split('T')[0], notes: '' });
   };
@@ -106,27 +106,28 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     mutationFn: async () => {
       const payload = {
         clientId: selectedClient.id,
-        dateLivraisonSouhaitee: dateLivraison,
+        wishDeliveryDate: dateLivraison,
         creneauHoraire: creneau,
-        modeLivraison: mode,
-        adresseLivraison: mode === 'LIVRAISON_DOMICILE' ? adresse : undefined,
-        instructionsLivraison: instructions,
-        source: 'MANUEL',
+        deliveryMode: mode,
+        deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
+        deliveryInstruction: instructions,
+        source: 'MANUALLY',
         produits: lignes.map((l) => ({
           produitId: l.produitId,
-          quantite: l.quantite,
-          messageGateau: l.messageGateau,
-          allergenes: l.allergenes,
+          quantity: l.quantity,
+          cakeMessage: l.cakeMessage,
+          allergen: l.allergen,
+          customizationsJson: l.customizationsJson,
         })),
       };
       const cmd: any = await commandeService.create(payload);
       if (acompteRecu === 'oui' && paiement.montant > 0) {
         await paiementService.enregistrer({
           commandeId: cmd.id,
-          montant: paiement.montant,
-          modePaiement: paiement.modePaiement,
-          typePaiement: 'ACOMPTE',
-          datePaiement: paiement.datePaiement,
+          amount: paiement.montant,
+          paymentMode: paiement.modePaiement,
+          paymentType: 'ACOMPTE',
+          paymentDate: paiement.datePaiement,
           notes: paiement.notes,
         });
       }
@@ -144,7 +145,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const canNext = () => {
     if (step === 0) return !!selectedClient;
     if (step === 1) return lignes.length > 0;
-    if (step === 2) return !!dateLivraison && (mode === 'RETRAIT_SUR_PLACE' || !!adresse);
+    if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_IN_SITE' || !!adresse);
     if (step === 3) return acompteRecu === 'non' || (paiement.montant > 0);
     return true;
   };
@@ -152,9 +153,9 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const addProduit = (p: any) => {
     setLignes((prev) => [...prev, {
       produitId: p.id,
-      nom: p.name || p.nom,
-      prix: p.basePrice ?? p.prixBase ?? p.price ?? 0,
-      quantite: 1,
+      productName: p.name || p.nom,
+      unitPrice: p.basePrice ?? p.prixBase ?? p.price ?? 0,
+      quantity: 1,
     }]);
   };
 
@@ -179,8 +180,8 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               {selectedClient ? (
                 <div className="p-3 rounded-lg border border-primary bg-primary/5 flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-sm">{selectedClient.prenom} {selectedClient.nom}</p>
-                    <p className="text-xs text-muted-foreground">{selectedClient.telephone} · {selectedClient.email}</p>
+                    <p className="font-medium text-sm">{selectedClient.firstname} {selectedClient.lastname}</p>
+                    <p className="text-xs text-muted-foreground">{selectedClient.phone} · {selectedClient.email}</p>
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => setSelectedClient(null)}>Changer</Button>
                 </div>
@@ -248,15 +249,15 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
                 {lignes.map((l, i) => (
                   <div key={i} className="p-3 rounded-lg border border-border space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm">{l.nom}</p>
+                      <p className="font-medium text-sm">{l.productName}</p>
                       <button onClick={() => setLignes(lignes.filter((_, j) => j !== i))} className="text-destructive p-1"><Trash2 className="w-4 h-4" /></button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-xs">Quantité</Label><Input type="number" min={1} value={l.quantite} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, quantite: parseInt(e.target.value || '1', 10) }; setLignes(ll); }} className="mt-1" /></div>
-                      <div><Label className="text-xs">Prix unitaire</Label><Input value={formatFCFA(l.prix)} disabled className="mt-1" /></div>
+                      <div><Label className="text-xs">Quantité</Label><Input type="number" min={1} value={l.quantity} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, quantity: parseInt(e.target.value || '1', 10) }; setLignes(ll); }} className="mt-1" /></div>
+                      <div><Label className="text-xs">Prix unitaire</Label><Input value={formatFCFA(l.unitPrice)} disabled className="mt-1" /></div>
                     </div>
-                    <div><Label className="text-xs">Message gâteau</Label><Input value={l.messageGateau || ''} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, messageGateau: e.target.value }; setLignes(ll); }} className="mt-1" /></div>
-                    <div><Label className="text-xs">Allergènes</Label><Input value={l.allergenes || ''} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, allergenes: e.target.value }; setLignes(ll); }} className="mt-1" /></div>
+                    <div><Label className="text-xs">Message gâteau</Label><Input value={l.cakeMessage || ''} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, cakeMessage: e.target.value }; setLignes(ll); }} className="mt-1" /></div>
+                    <div><Label className="text-xs">Allergènes</Label><Input value={l.allergen || ''} onChange={(e) => { const ll = [...lignes]; ll[i] = { ...l, allergen: e.target.value }; setLignes(ll); }} className="mt-1" /></div>
                   </div>
                 ))}
                 {lignes.length > 0 && (
@@ -287,14 +288,14 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
                 <Label>Mode</Label>
                 <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2 space-y-2">
                   <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer">
-                    <RadioGroupItem value="LIVRAISON_DOMICILE" /><span className="text-sm">Livraison à domicile</span>
+                    <RadioGroupItem value="HOME_DELIVERY" /><span className="text-sm">Livraison à domicile</span>
                   </label>
                   <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer">
-                    <RadioGroupItem value="RETRAIT_SUR_PLACE" /><span className="text-sm">Retrait sur place</span>
+                    <RadioGroupItem value="COLLECTION_ON_SITE" /><span className="text-sm">Retrait sur place</span>
                   </label>
                 </RadioGroup>
               </div>
-              {mode === 'LIVRAISON_DOMICILE' && (
+              {mode === 'HOME_DELIVERY' && (
                 <>
                   <div><Label>Adresse</Label><Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="mt-1" /></div>
                   <div><Label>Instructions</Label><Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="mt-1" /></div>
@@ -342,14 +343,14 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               <div className="p-3 rounded-lg bg-secondary/40 space-y-1">
                 <p className="font-semibold">Produits</p>
                 {lignes.map((l, i) => (
-                  <div key={i} className="flex justify-between"><span>{l.nom} ×{l.quantite}</span><span>{formatFCFA(l.prix * l.quantite)}</span></div>
+                  <div key={i} className="flex justify-between"><span>{l.productName} ×{l.quantity}</span><span>{formatFCFA(l.unitPrice * l.quantity)}</span></div>
                 ))}
                 <div className="flex justify-between font-bold pt-2 border-t border-border"><span>Total</span><span>{formatFCFA(total)}</span></div>
               </div>
               <div className="p-3 rounded-lg bg-secondary/40">
                 <p className="font-semibold">Livraison</p>
                 <p>📅 {dateLivraison} — {creneau}</p>
-                <p>{mode === 'LIVRAISON_DOMICILE' ? `📍 ${adresse}` : '🏪 Retrait sur place'}</p>
+                <p>{mode === 'HOME_DELIVERY' ? `📍 ${adresse}` : '🏪 Retrait sur place'}</p>
               </div>
               {acompteRecu === 'oui' && (
                 <div className="p-3 rounded-lg bg-success/10">
