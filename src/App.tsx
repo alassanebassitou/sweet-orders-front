@@ -20,6 +20,7 @@ import ClientsPage from "@/pages/admin/ClientsPage";
 import ProductionPage from "@/pages/admin/ProductionPage";
 import LivraisonsPage from "@/pages/admin/LivraisonsPage";
 import CataloguePage from "@/pages/admin/CataloguePage";
+import CategoriesPage from "@/pages/admin/CategoriesPage";
 import FinancesPage from "@/pages/admin/FinancesPage";
 import NotificationsPage from "@/pages/admin/NotificationsPage";
 import ParametresPage from "@/pages/admin/ParametresPage";
