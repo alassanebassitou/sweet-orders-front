@@ -16,6 +16,7 @@ const navItems = [
   { path: '/admin/production', label: 'Production', icon: ChefHat },
   { path: '/admin/livraisons', label: 'Livraisons', icon: Truck },
   { path: '/admin/catalogue', label: 'Catalogue', icon: CakeSlice },
+  { path: '/admin/categories', label: 'Catégories', icon: Tag },
   { path: '/admin/finances', label: 'Finances', icon: Wallet },
   { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
 ];
