@@ -20,11 +20,25 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
   );
 }
 
-export function EmptyState({ message = 'Aucune donnée', icon: Icon = Inbox }: { message?: string; icon?: any }) {
+export function EmptyState({
+  message,
+  title,
+  description,
+  icon: Icon = Inbox,
+  action,
+}: {
+  message?: string;
+  title?: string;
+  description?: string;
+  icon?: any;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
       <Icon className="w-10 h-10 mb-3 opacity-30" />
-      <p className="text-sm">{message}</p>
+      {title && <p className="text-base font-medium text-foreground mb-1">{title}</p>}
+      <p className="text-sm">{description || message || 'Aucune donnée'}</p>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
