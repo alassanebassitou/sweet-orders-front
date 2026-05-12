@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { productService } from '@/lib/services';
+import { productService, categoryService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 
