@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { productService } from '@/lib/services';
+import { productService, categoryService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 
@@ -20,6 +20,10 @@ export default function CataloguePage() {
   const { data: produits = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['products'],
     queryFn: productService.list,
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getAll,
   });
 
   interface Product {
@@ -41,7 +45,8 @@ export default function CataloguePage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, category: 'CAKE' });
+  const defaultCategory = categories.length > 0 ? categories[0].name : '';
+  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, category: defaultCategory });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['products'] });
 
@@ -63,7 +68,7 @@ export default function CataloguePage() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: '', description: '', basePrice: 0, category: 'CAKE' });
+    setForm({ name: '', description: '', basePrice: 0, category: categories.length > 0 ? categories[0].name : '' });
     setOpen(true);
   };
   const openEdit = (p: any) => {
@@ -134,10 +139,9 @@ export default function CataloguePage() {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CAKE">Cake</SelectItem>
-                    <SelectItem value="CUPCAKE">Cupcake</SelectItem>
-                    <SelectItem value="TARTE">Tarte</SelectItem>
-                    <SelectItem value="AUTRE">Autre</SelectItem>
+                    {categories.map((cat: any) => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
