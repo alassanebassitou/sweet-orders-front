@@ -126,6 +126,21 @@ export const notificationService = {
   marquerToutesLues: () => api.patch('/notifications/read-all').then(r => r.data),
 };
 
+// ---- Categories
+export interface CategoryRequest {
+  name: string;
+  description?: string;
+  photoUrl?: string;
+}
+export const categoryService = {
+  getAll: () => api.get('/categories').then(r => r.data),
+  getById: (id: number) => api.get(`/categories/${id}`).then(r => r.data),
+  create: (payload: CategoryRequest) => api.post('/categories', payload).then(r => r.data),
+  update: (id: number, payload: CategoryRequest) =>
+    api.put(`/categories/${id}`, payload).then(r => r.data),
+  delete: (id: number) => api.delete(`/categories/${id}`).then(r => r.data),
+};
+
 // ---- Kkiapay
 export const paymentService = {
   kkiapayConfig: () => api.get('/payments/kkiapay/config').then(r => r.data),
