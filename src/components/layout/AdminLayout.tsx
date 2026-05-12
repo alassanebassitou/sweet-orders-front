@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Truck, ChefHat,
-  CakeSlice, Wallet, Bell, Settings, LogOut, Menu, X
+  CakeSlice, Wallet, Bell, Settings, LogOut, Menu, X, Tag
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
