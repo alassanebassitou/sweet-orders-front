@@ -21,6 +21,10 @@ export default function CataloguePage() {
     queryKey: ['products'],
     queryFn: productService.list,
   });
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getAll,
+  });
 
   interface Product {
     id: string;
@@ -41,7 +45,8 @@ export default function CataloguePage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, category: 'CAKE' });
+  const defaultCategory = categories.length > 0 ? categories[0].name : '';
+  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, category: defaultCategory });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['products'] });
 
