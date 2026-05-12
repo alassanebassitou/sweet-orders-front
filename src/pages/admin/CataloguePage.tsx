@@ -139,10 +139,9 @@ export default function CataloguePage() {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CAKE">Cake</SelectItem>
-                    <SelectItem value="CUPCAKE">Cupcake</SelectItem>
-                    <SelectItem value="TARTE">Tarte</SelectItem>
-                    <SelectItem value="AUTRE">Autre</SelectItem>
+                    {categories.map((cat: any) => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
