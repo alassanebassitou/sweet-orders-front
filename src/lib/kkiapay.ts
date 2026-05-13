@@ -52,15 +52,20 @@ export const payWithKkiapay = async ({
     await loadSdk();
     const { data: config } = await api.get('/payments/kkiapay/config');
 
-    const successHandler = async ({ transactionId }: any) => {
+    const successHandler = async ({ transactionId, amount: paidAmount }: any) => {
       try {
         await api.post('/payments/kkiapay/verify', { transactionId, commandeId });
         window.removeKkiapayListener?.('success', successHandler);
         window.removeKkiapayListener?.('failed', failureHandler);
-        toast.success('Paiement effectué avec succès !');
+        // Navigate to result page
+        const resultUrl = `/app/paiement/resultat?status=success&commandeId=${commandeId}&transactionId=${transactionId}&amount=${paidAmount || amount}`;
+        window.location.href = resultUrl;
         onSuccess?.(transactionId);
       } catch (err) {
-        toast.error('Erreur lors de la vérification du paiement.');
+        window.removeKkiapayListener?.('success', successHandler);
+        window.removeKkiapayListener?.('failed', failureHandler);
+        const errorUrl = `/app/paiement/resultat?status=error&commandeId=${commandeId}`;
+        window.location.href = errorUrl;
         onFailure?.(err);
       }
     };
@@ -68,7 +73,20 @@ export const payWithKkiapay = async ({
     const failureHandler = (error: any) => {
       window.removeKkiapayListener?.('success', successHandler);
       window.removeKkiapayListener?.('failed', failureHandler);
-      toast.error('Paiement échoué. Veuillez réessayer.');
+
+      const failureCode = error?.failureCode || error?.code || 'error';
+      const statusMap: Record<string, string> = {
+        'insufficient_fund': 'insufficient_funds',
+        'insufficient_funds': 'insufficient_funds',
+        'processing_error': 'error',
+        'invalid_number': 'error',
+        'declined': 'declined',
+        'transaction_denied': 'declined',
+      };
+      const status = statusMap[failureCode] || 'error';
+
+      const errorUrl = `/app/paiement/resultat?status=${status}&commandeId=${commandeId}`;
+      window.location.href = errorUrl;
       onFailure?.(error);
     };
 
@@ -86,6 +104,8 @@ export const payWithKkiapay = async ({
     });
   } catch (err) {
     toast.error("Impossible d'initialiser le paiement.");
+    const errorUrl = `/app/paiement/resultat?status=error&commandeId=${commandeId}`;
+    window.location.href = errorUrl;
     onFailure?.(err);
   }
 };
