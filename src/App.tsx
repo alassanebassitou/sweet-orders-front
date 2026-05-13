@@ -32,6 +32,7 @@ import ClientCommander from "@/pages/client/ClientCommander";
 import ClientMesCommandes from "@/pages/client/ClientMesCommandes";
 import ClientCommandeDetail from "@/pages/client/ClientCommandeDetail";
 import ClientProfil from "@/pages/client/ClientProfil";
+import PaymentResultPage from "@/pages/client/PaymentResultPage";
 
 import NotFound from "./pages/NotFound";
 import { toast } from "sonner";
