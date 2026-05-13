@@ -91,6 +91,7 @@ export default function ClientCommander() {
 
   const handlePayAcompte = () => {
     if (!createdCommande) return;
+    clear();
     payWithKkiapay({
       amount: createdCommande.acompteRequis ?? acompteRequis,
       commandeId: createdCommande.id,
@@ -98,10 +99,6 @@ export default function ClientCommander() {
         telephone: user?.telephone,
         name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
         email: user?.email || '',
-      },
-      onSuccess: () => {
-        clear();
-        navigate(`/app/commandes/${createdCommande.id}`);
       },
     });
   };

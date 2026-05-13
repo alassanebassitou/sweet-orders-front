@@ -32,6 +32,7 @@ import ClientCommander from "@/pages/client/ClientCommander";
 import ClientMesCommandes from "@/pages/client/ClientMesCommandes";
 import ClientCommandeDetail from "@/pages/client/ClientCommandeDetail";
 import ClientProfil from "@/pages/client/ClientProfil";
+import PaymentResultPage from "@/pages/client/PaymentResultPage";
 
 import NotFound from "./pages/NotFound";
 import { toast } from "sonner";
@@ -116,6 +117,8 @@ const App = () => (
               <Route path="commandes/:id" element={<ClientCommandeDetail />} />
               <Route path="profil" element={<ClientProfil />} />
             </Route>
+
+            <Route path="/app/paiement/resultat" element={<PaymentResultPage />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
