@@ -118,6 +118,8 @@ const App = () => (
               <Route path="profil" element={<ClientProfil />} />
             </Route>
 
+            <Route path="/app/paiement/resultat" element={<PaymentResultPage />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
