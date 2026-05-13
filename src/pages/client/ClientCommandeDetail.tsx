@@ -131,11 +131,6 @@ export default function ClientCommandeDetail() {
                     name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
                     email: user?.email || '',
                   },
-                  onSuccess: () => {
-                    qc.invalidateQueries({ queryKey: ['commande', String(cmd.id)] });
-                    qc.invalidateQueries({ queryKey: ['commande-balance', String(cmd.id)] });
-                    toast.success('Solde payé !');
-                  },
                 })}
                 className="w-full mt-3"
               >
