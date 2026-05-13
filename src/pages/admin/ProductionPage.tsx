@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Printer, ChefHat } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,24 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+type PlanningItem = {
+  date?: string;
+  wishDeliveryDate?: string;
+  produits?: { name?: string }[];
+  productName?: string;
+  numero?: string;
+};
+
+type FicheLine = {
+  commandeId: string | number;
+  isFinished?: boolean;
+  productName?: string;
+  quantity?: number;
+  clientName?: string;
+  cakeMessage?: string;
+  noCommande?: string;
+};
 
 function getMonday() {
   const today = new Date();
@@ -36,14 +54,18 @@ export default function ProductionPage() {
   });
 
   const terminerMut = useMutation({
-    mutationFn: (commandeId: any) => productionService.terminer(commandeId),
-    onSuccess: () => { toast.success('Marqué terminé'); qc.invalidateQueries({ queryKey: ['fiche-jour'] }); },
+    mutationFn: (commandeId: string | number) => productionService.terminer(commandeId),
+    onSuccess: () => {
+      toast.success('Marqué terminé');
+      qc.invalidateQueries({ queryKey: ['fiche-jour'] });
+    },
     onError: () => toast.error('Erreur'),
   });
 
   // Group planning by date
-  const byDay: Record<string, any[]> = {};
-  (planningQ.data || []).forEach((item: any) => {
+  const planningData = planningQ.data as PlanningItem[] | undefined;
+  const byDay: Record<string, PlanningItem[]> = {};
+  (planningData || []).forEach((item) => {
     const d = item.date || item.wishDeliveryDate;
     if (!d) return;
     if (!byDay[d]) byDay[d] = [];
@@ -51,14 +73,61 @@ export default function ProductionPage() {
   });
 
   const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     return d.toISOString().split('T')[0];
   });
 
-  const formData = ficheQ.data;
-  const todayItems: any[] = formData?.lines || [];
+  const formData = ficheQ.data as { lines?: FicheLine[]; totalCakes?: number; overload?: boolean } | undefined;
+  const todayItems = (formData?.lines || []) as FicheLine[];
   const totalCakes: number = formData?.totalCakes || 0;
-  const isSurcharge: boolean = formData?.surcharge || false;
+  const isSurcharge: boolean = formData?.overload || false;
+  
+  let ficheContent: ReactNode;
+  if (ficheQ.isLoading) {
+    ficheContent = <LoadingState />;
+  } else if (ficheQ.isError) {
+    ficheContent = <ErrorState onRetry={ficheQ.refetch} />;
+  } else if (todayItems.length === 0) {
+    ficheContent = <EmptyState message="Rien à produire aujourd'hui" icon={ChefHat} />;
+  } else {
+    ficheContent = (
+      <table className="w-full text-sm">
+        <thead className="bg-secondary/50 text-xs text-muted-foreground">
+          <tr>
+            <th className="p-3 text-left">✓</th>
+            <th className="p-3 text-left">Produit</th>
+            <th className="p-3 text-left">Qté</th>
+            <th className="p-3 text-left">Client</th>
+            <th className="p-3 text-left">Personnalisation</th>
+            <th className="p-3 text-left">N°</th>
+          </tr>
+        </thead>
+        <tbody>
+          {todayItems.map((ligne) => {
+            const done = ligne.isFinished === true;
+            return (
+              <tr key={`${ligne.commandeId}`} className="border-t border-border">
+                <td className="p-3">
+                  <Checkbox
+                    checked={done}
+                    onCheckedChange={() => terminerMut.mutate(ligne.commandeId)}
+                  />
+                </td>
+                <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>
+                  {ligne.productName}
+                </td>
+                <td className="p-3">{ligne.quantity}</td>
+                <td className="p-3">{ligne.clientName}</td>
+                <td className="p-3 text-xs text-muted-foreground">{ligne.cakeMessage || '—'}</td>
+                <td className="p-3 text-xs text-muted-foreground">{ligne.noCommande}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -79,21 +148,29 @@ export default function ProductionPage() {
         </TabsList>
 
         <TabsContent value="planning" className="space-y-3 pt-4">
-          {planningQ.isLoading ? <LoadingState /> :
-           planningQ.isError ? <ErrorState onRetry={planningQ.refetch} /> : (
+          {planningQ.isLoading ? (
+            <LoadingState />
+          ) : planningQ.isError ? (
+            <ErrorState onRetry={planningQ.refetch} />
+          ) : (
             <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
               {week.map((d, i) => {
                 const orders = byDay[d] || [];
                 const overload = orders.length > 5;
                 return (
-                  <Card key={d} className={cn('shadow-sm', overload && 'border-warning bg-warning/5', d === today && 'ring-2 ring-primary')}>
+                  <Card
+                    key={d}
+                    className={cn('shadow-sm', overload && 'border-warning bg-warning/5', d === today && 'ring-2 ring-primary')}
+                  >
                     <CardContent className="p-3">
                       <p className="text-xs text-muted-foreground">{days[i]}</p>
                       <p className="font-display text-lg font-bold">{new Date(d).getDate()}</p>
                       <p className="text-xs mt-2 font-semibold text-primary">{orders.length} cake(s)</p>
                       <div className="mt-2 space-y-1">
-                        {orders.slice(0, 3).map((o: any, idx: number) => (
-                          <p key={idx} className="text-[10px] text-muted-foreground truncate">{o.produits?.[0]?.name || o.productName || o.numero}</p>
+                        {orders.slice(0, 3).map((o, idx) => (
+                          <p key={idx} className="text-[10px] text-muted-foreground truncate">
+                            {o.produits?.[0]?.name || o.productName || o.numero}
+                          </p>
                         ))}
                       </div>
                     </CardContent>
@@ -112,58 +189,7 @@ export default function ProductionPage() {
             </Button>
           </div>
           <Card>
-            <CardContent className="p-0">
-              {ficheQ.isLoading ? <LoadingState /> :
-               ficheQ.isError ? <ErrorState onRetry={ficheQ.refetch} /> :
-               todayItems.length === 0 ? <EmptyState message="Rien à produire aujourd'hui" icon={ChefHat} /> : (
-                <table className="w-full text-sm">
-                  <thead className="bg-secondary/50 text-xs text-muted-foreground">
-                    <tr>
-                      <th className="p-3 text-left">✓</th>
-                      <th className="p-3 text-left">Produit</th>
-                      <th className="p-3 text-left">Qté</th>
-                      <th className="p-3 text-left">Client</th>
-                      <th className="p-3 text-left">Personnalisation</th>
-                      <th className="p-3 text-left">N°</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {todayItems.flatMap((ligne: any, i: number) => {
-                    const key = `${ligne.commandeId}-${i}`;
-                    const done = ligne.isFinished === true;
-                    return (
-                      <tr key={key} className="border-t border-border">
-                        <td className="p-3">
-                          <Checkbox
-                            checked={done}
-                            onCheckedChange={() =>
-                              terminerMut.mutate(ligne.commandeId)
-                            }
-                          />
-                        </td>
-                        <td className={cn('p-3 font-medium',
-                            done && 'line-through opacity-50')}>
-                          {ligne.productName}
-                        </td>
-                        <td className="p-3">
-                          {ligne.quantity}  
-                        </td>
-                        <td className="p-3">
-                          {ligne.clientName} 
-                        </td>
-                        <td className="p-3 text-xs text-muted-foreground">
-                          {ligne.cakeMessage || '—'}
-                        </td>
-                        <td className="p-3 text-xs text-muted-foreground">
-                          {ligne.noCommande}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
+            <CardContent className="p-0">{ficheContent}</CardContent>
           </Card>
         </TabsContent>
       </Tabs>

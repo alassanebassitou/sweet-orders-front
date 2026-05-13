@@ -44,7 +44,7 @@ export default function ClientCommandeDetail() {
 
   const currentStep = statutOrder.indexOf(cmd.status);
   const totalPaye = balanceQ.data?.totalPaye ?? cmd.totalPaye ?? cmd.paye ?? 0;
-  const reste = balanceQ.data?.soldeRestant ?? ((cmd.totalAmount || 0) - totalPaye);
+  const reste = balanceQ.data?.netProfit ?? ((cmd.totalAmount || 0) - totalPaye);
 
   return (
     <div className="p-4 md:p-6 space-y-5 animate-fade-in">

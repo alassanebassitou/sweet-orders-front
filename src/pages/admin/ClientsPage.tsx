@@ -9,7 +9,7 @@ import { userService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
-
+// Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -21,9 +21,11 @@ export default function ClientsPage() {
 
   const clients = users.filter((u: any) => u.role === 'ROLE_CLIENT');
   const filtered = clients.filter((c: any) =>
-    [c.nom, c.prenom, c.telephone, c.ville, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
+    [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
   );
   const selected = clients.find((c: any) => c.id === selectedClientId);
+
+  console.log("clients", clients);
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -50,13 +52,13 @@ export default function ClientsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                      {(c.prenom?.charAt(0) || '')}{(c.nom?.charAt(0) || c.name?.charAt(0) || '')}
+                      {(c.firstname?.charAt(0) || '')}{(c.lastname?.charAt(0) || c.name?.charAt(0) || '')}
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">{c.prenom} {c.nom || c.name}</p>
-                      {c.ville && (
+                      <p className="font-semibold text-sm">{c.firstname} {c.lastname || c.name}</p>
+                      {c.city && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="w-3 h-3" /> {c.ville}
+                          <MapPin className="w-3 h-3" /> {c.city}
                         </div>
                       )}
                     </div>
@@ -69,11 +71,11 @@ export default function ClientsPage() {
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   {c.telephone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.telephone}</div>}
-                  <span>{c.totalCommandes ?? 0} commande(s)</span>
+                  <span>{c.totalCommande ?? 0} commande(s)</span>
                 </div>
                 <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs">
                   <span className="text-muted-foreground">Total dépensé</span>
-                  <span className="font-semibold">{formatFCFA(c.totalDepense ?? 0)}</span>
+                  <span className="font-semibold">{formatFCFA(c.totalExpenses ?? 0)}</span>
                 </div>
               </CardContent>
             </Card>

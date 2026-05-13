@@ -33,6 +33,7 @@ export default function ParametresPage() {
     onSuccess: () => { toast.success('Zone ajoutée'); setNewZone({ name: '', deliveryFrees: 0 }); qc.invalidateQueries({ queryKey: ['zones'] }); },
     onError: () => toast.error('Erreur'),
   });
+  
   const removeZoneMut = useMutation({
     mutationFn: (id: any) => parametreService.supprimerZone(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['zones'] }),

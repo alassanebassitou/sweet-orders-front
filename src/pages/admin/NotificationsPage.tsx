@@ -14,12 +14,11 @@ export default function NotificationsPage() {
     queryFn: notificationService.list,
   });
 
-  console.log('Notifications:', notifs);
-
   const lireMut = useMutation({
     mutationFn: (id: any) => notificationService.marquerLue(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   });
+  
   const lireAllMut = useMutation({
     mutationFn: () => notificationService.marquerToutesLues(),
     onSuccess: () => { toast.success('Toutes les notifications marquées comme lues'); qc.invalidateQueries({ queryKey: ['notifications'] }); },
