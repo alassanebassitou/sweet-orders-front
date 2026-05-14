@@ -12,6 +12,7 @@ import { productService } from '@/lib/services';
 import { useCartStore } from '@/stores/cartStore';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
+import { ReviewsSection } from '@/components/client/ReviewsSection';
 
 export default function ClientProduitDetail() {
   const { id } = useParams();
@@ -111,6 +112,8 @@ export default function ClientProduitDetail() {
             <Button size="icon" variant="outline" onClick={() => setQty(qty + 1)}><Plus className="w-4 h-4" /></Button>
           </div>
         </div>
+
+        <ReviewsSection produitId={product.id} />
       </div>
 
       <div className="fixed bottom-16 md:bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-20">

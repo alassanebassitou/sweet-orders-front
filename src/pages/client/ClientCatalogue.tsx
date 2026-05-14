@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { productService } from '@/lib/services';
+import { ProductRatingBadge } from '@/components/client/ProductRatingBadge';
 import { CATEGORIES } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
@@ -41,8 +42,9 @@ export default function ClientCatalogue() {
               <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                 {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="w-full h-full object-cover" /> : <CakeSlice className="w-12 h-12 text-primary/60" />}
               </div>
-              <CardContent className="p-3">
+              <CardContent className="p-3 space-y-1">
                 <h3 className="font-medium text-sm">{p.name}</h3>
+                <ProductRatingBadge produitId={p.id} />
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm font-semibold text-primary">{formatFCFA(p.basePrice)}</span>
                   <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">Voir</Button>
