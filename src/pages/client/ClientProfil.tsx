@@ -8,10 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/stores/authStore';
 import { userService, authService } from '@/lib/services';
+import { avisService } from '@/lib/avisService';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
 import { commandeService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
+import { StarRating } from '@/components/ui/StarRating';
+import { relativeTime } from '@/lib/relativeTime';
+import { CakeSlice, Star } from 'lucide-react';
 
 export default function ClientProfil() {
   const navigate = useNavigate();
@@ -26,6 +30,10 @@ export default function ClientProfil() {
   const { data: commandes = [] } = useQuery({
     queryKey: ['mes-commandes'],
     queryFn: () => commandeService.mesCommandes(),
+  });
+  const { data: mesAvis = [] } = useQuery({
+    queryKey: ['mes-avis'],
+    queryFn: () => avisService.getMesAvis(),
   });
 
   const total = commandes.length;
