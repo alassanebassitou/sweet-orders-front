@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, RotateCw } from 'lucide-react';
+import { ArrowLeft, Check, RotateCw, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { commandeService } from '@/lib/services';
+import { avisService } from '@/lib/avisService';
 import { statutOrder } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
 import { useAuthStore } from '@/stores/authStore';
 import { payWithKkiapay } from '@/lib/kkiapay';
+import { SubmitReviewModal } from '@/components/client/SubmitReviewModal';
 import { cn } from '@/lib/utils';
 
 export default function ClientCommandeDetail() {
@@ -18,11 +21,15 @@ export default function ClientCommandeDetail() {
   const qc = useQueryClient();
   const { user } = useAuthStore();
 
+  const [reviewOpen, setReviewOpen] = useState(false);
+
   const { data: cmd, isLoading, isError, refetch } = useQuery({
     queryKey: ['commande', id],
     queryFn: () => commandeService.get(id!),
     enabled: !!id,
   });
+
+  const mesAvisQ = useQuery({ queryKey: ['mes-avis'], queryFn: () => avisService.getMesAvis() });
 
   const balanceQ = useQuery({
     queryKey: ['commande-balance', id],
@@ -86,9 +93,30 @@ export default function ClientCommandeDetail() {
       {cmd.status === 'READY' && (
         <Card className="bg-purple-50 border-purple-200"><CardContent className="p-4 text-sm text-purple-800">🎉 Votre commande est prête !</CardContent></Card>
       )}
-      {cmd.status === 'DELIVERED' && (
-        <Card className="bg-success/10 border-success/30"><CardContent className="p-4 text-sm text-success">✅ Commande livrée. Merci pour votre confiance !</CardContent></Card>
-      )}
+      {cmd.status === 'DELIVERED' && (() => {
+        const productList: any[] = cmd.products || [];
+        const mesAvis = mesAvisQ.data || [];
+        const remaining = productList.filter(
+          (p) => !mesAvis.some((a: any) => Number(a.productId ?? a.produitId) === Number(p.productId ?? p.id))
+        );
+        return (
+          <Card className="bg-success/10 border-success/30">
+            <CardContent className="p-4 space-y-3 text-sm">
+              <p className="text-success">✅ Commande livrée. Merci pour votre confiance !</p>
+              {remaining.length > 0 ? (
+                <>
+                  <p className="text-muted-foreground text-xs">Votre avis nous aide à nous améliorer.</p>
+                  <Button onClick={() => setReviewOpen(true)} variant="outline" className="w-full gap-2">
+                    <Star className="w-4 h-4 text-amber-500" /> Donner mon avis sur cette commande
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Avis envoyé ✓ Merci !</p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardContent className="p-4 space-y-3">
@@ -144,6 +172,17 @@ export default function ClientCommandeDetail() {
       <Button variant="outline" onClick={() => dupliquerMut.mutate()} disabled={dupliquerMut.isPending} className="w-full gap-2">
         <RotateCw className="w-4 h-4" /> Répéter cette commande
       </Button>
+
+      <SubmitReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        commandeId={Number(cmd.id)}
+        products={(cmd.products || []).map((p: any) => ({
+          productId: Number(p.productId ?? p.id),
+          productName: p.productName || p.name,
+          photoUrl: p.photoUrl,
+        }))}
+      />
     </div>
   );
 }
