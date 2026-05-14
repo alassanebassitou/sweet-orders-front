@@ -21,6 +21,7 @@ import ProductionPage from "@/pages/admin/ProductionPage";
 import LivraisonsPage from "@/pages/admin/LivraisonsPage";
 import CataloguePage from "@/pages/admin/CataloguePage";
 import CategoriesPage from "@/pages/admin/CategoriesPage";
+import AvisPage from "@/pages/admin/AvisPage";
 import FinancesPage from "@/pages/admin/FinancesPage";
 import NotificationsPage from "@/pages/admin/NotificationsPage";
 import ParametresPage from "@/pages/admin/ParametresPage";
@@ -102,6 +103,7 @@ const App = () => (
               <Route path="livraisons" element={<LivraisonsPage />} />
               <Route path="catalogue" element={<CataloguePage />} />
               <Route path="categories" element={<CategoriesPage />} />
+              <Route path="avis" element={<AvisPage />} />
               <Route path="finances" element={<FinancesPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="parametres" element={<ParametresPage />} />
