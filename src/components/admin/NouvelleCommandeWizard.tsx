@@ -19,12 +19,10 @@ interface Props {
 const steps = ['Client', 'Produits', 'Livraison', 'Paiement', 'Récap'];
 
 const MODES_PAIEMENT = [
-  { value: 'ESPECES', label: 'Espèces' },
-  { value: 'ORANGE_MONEY', label: 'Orange Money' },
-  { value: 'WAVE', label: 'Wave' },
-  { value: 'MOOV', label: 'Moov' },
-  { value: 'VIREMENT', label: 'Virement' },
-  { value: 'AUTRE', label: 'Autre' },
+  { value: 'CASH', label: 'Espèces' },
+  { value: 'MOBILE_MONEY', label: 'mobile Money' },
+  { value: 'CART', label: 'Virement' },
+  { value: 'OTHER', label: 'Autre' },
 ];
 
 interface LigneProduit {
@@ -46,7 +44,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [creatingClient, setCreatingClient] = useState(false);
   const [newClient, setNewClient] = useState({
-    nom: '', prenom: '', telephone: '', email: '', adresse: '', ville: '',
+    lastname: '', firstname: '', phone: '', email: '', address: '', city: '',
   });
 
   // Step 2 — Produits
@@ -62,9 +60,9 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   // Step 4 — Paiement
   const [acompteRecu, setAcompteRecu] = useState<'oui' | 'non'>('non');
   const [paiement, setPaiement] = useState({
-    montant: 0,
-    modePaiement: 'ESPECES',
-    datePaiement: new Date().toISOString().split('T')[0],
+    amount: 0,
+    paymentMode: 'CASH',
+    paymentDate: new Date().toISOString().split('T')[0],
     notes: '',
   });
 
@@ -95,11 +93,11 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const reset = () => {
     setStep(0);
     setSearch(''); setSelectedClient(null); setCreatingClient(false);
-    setNewClient({ nom: '', prenom: '', telephone: '', email: '', adresse: '', ville: '' });
+    setNewClient({ lastname: '', firstname: '', phone: '', email: '', address: '', city: '' });
     setLignes([]);
     setDateLivraison(''); setCreneau('matin'); setMode('HOME_DELIVERY'); setAdresse(''); setInstructions('');
     setAcompteRecu('non');
-    setPaiement({ montant: 0, modePaiement: 'ESPECES', datePaiement: new Date().toISOString().split('T')[0], notes: '' });
+    setPaiement({ amount: 0, paymentMode: 'CASH', paymentDate: new Date().toISOString().split('T')[0], notes: '' });
   };
 
   const submitMut = useMutation({
@@ -112,8 +110,8 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
         deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
         deliveryInstruction: instructions,
         source: 'MANUALLY',
-        produits: lignes.map((l) => ({
-          produitId: l.produitId,
+        productRequests: lignes.map((l) => ({
+          productId: l.produitId,
           quantity: l.quantity,
           cakeMessage: l.cakeMessage,
           allergen: l.allergen,
@@ -121,13 +119,13 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
         })),
       };
       const cmd: any = await commandeService.create(payload);
-      if (acompteRecu === 'oui' && paiement.montant > 0) {
+      if (acompteRecu === 'oui' && paiement.amount > 0) {
         await paiementService.enregistrer({
           commandeId: cmd.id,
-          amount: paiement.montant,
-          paymentMode: paiement.modePaiement,
+          amount: paiement.amount,
+          paymentMode: paiement.paymentMode,
           paymentType: 'ACOMPTE',
-          paymentDate: paiement.datePaiement,
+          paymentDate: paiement.paymentDate,
           notes: paiement.notes,
         });
       }
@@ -146,7 +144,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     if (step === 0) return !!selectedClient;
     if (step === 1) return lignes.length > 0;
     if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_IN_SITE' || !!adresse);
-    if (step === 3) return acompteRecu === 'non' || (paiement.montant > 0);
+    if (step === 3) return acompteRecu === 'non' || (paiement.amount > 0);
     return true;
   };
 
@@ -188,15 +186,15 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               ) : creatingClient ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Prénom</Label><Input value={newClient.prenom} onChange={(e) => setNewClient({ ...newClient, prenom: e.target.value })} className="mt-1" /></div>
-                    <div><Label>Nom</Label><Input value={newClient.nom} onChange={(e) => setNewClient({ ...newClient, nom: e.target.value })} className="mt-1" /></div>
+                    <div><Label>Prénom</Label><Input value={newClient.firstname} onChange={(e) => setNewClient({ ...newClient, firstname: e.target.value })} className="mt-1" /></div>
+                    <div><Label>Nom</Label><Input value={newClient.lastname} onChange={(e) => setNewClient({ ...newClient, lastname: e.target.value })} className="mt-1" /></div>
                   </div>
-                  <div><Label>Téléphone</Label><Input value={newClient.telephone} onChange={(e) => setNewClient({ ...newClient, telephone: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Téléphone</Label><Input value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} className="mt-1" /></div>
                   <div><Label>Email</Label><Input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} className="mt-1" /></div>
-                  <div><Label>Adresse</Label><Input value={newClient.adresse} onChange={(e) => setNewClient({ ...newClient, adresse: e.target.value })} className="mt-1" /></div>
-                  <div><Label>Ville</Label><Input value={newClient.ville} onChange={(e) => setNewClient({ ...newClient, ville: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Adresse</Label><Input value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Ville</Label><Input value={newClient.city} onChange={(e) => setNewClient({ ...newClient, city: e.target.value })} className="mt-1" /></div>
                   <div className="flex gap-2">
-                    <Button onClick={() => createClientMut.mutate(newClient)} disabled={createClientMut.isPending || !newClient.nom || !newClient.telephone}>Créer</Button>
+                    <Button onClick={() => createClientMut.mutate(newClient)} disabled={createClientMut.isPending || !newClient.firstname || !newClient.phone}>Créer</Button>
                     <Button variant="ghost" onClick={() => setCreatingClient(false)}>Annuler</Button>
                   </div>
                 </div>
@@ -209,8 +207,8 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
                   <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
                     {(usersQ.data || []).slice(0, 20).map((u: any) => (
                       <button key={u.id} onClick={() => setSelectedClient(u)} className="w-full text-left p-3 border-b border-border last:border-0 hover:bg-secondary/50">
-                        <p className="text-sm font-medium">{u.prenom} {u.nom}</p>
-                        <p className="text-xs text-muted-foreground">{u.telephone} · {u.email}</p>
+                        <p className="text-sm font-medium">{u.firstname} {u.lastname}</p>
+                        <p className="text-xs text-muted-foreground">{u.phone} · {u.email}</p>
                       </button>
                     ))}
                     {(usersQ.data || []).length === 0 && (

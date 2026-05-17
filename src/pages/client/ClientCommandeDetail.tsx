@@ -14,12 +14,20 @@ import { useAuthStore } from '@/stores/authStore';
 import { payWithKkiapay } from '@/lib/kkiapay';
 import { SubmitReviewModal } from '@/components/client/SubmitReviewModal';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+
 
 export default function ClientCommandeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateDate, setDuplicateDate] = useState(
+    new Date(Date.now() + 86400000) // tomorrow
+      .toISOString().split('T')[0]
+  );
 
   const [reviewOpen, setReviewOpen] = useState(false);
 
@@ -38,12 +46,16 @@ export default function ClientCommandeDetail() {
   });
 
   const dupliquerMut = useMutation({
-    mutationFn: () => commandeService.dupliquer(id!),
-    onSuccess: (data: any) => {
-      toast.success('Commande dupliquée');
-      if (data?.id) navigate(`/app/commandes/${data.id}`); else navigate('/app/commandes');
-    },
-    onError: () => toast.error('Erreur lors de la duplication'),
+  mutationFn: (date: string) =>
+    commandeService.dupliquer(id!, date),
+  onSuccess: (data: any) => {
+    toast.success('Commande dupliquée !');
+    setShowDuplicateDialog(false);
+    if (data?.id) navigate(`/app/commandes/${data.id}`);
+    else navigate('/app/commandes');
+  },
+  onError: () =>
+    toast.error('Erreur lors de la duplication'),
   });
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -169,9 +181,57 @@ export default function ClientCommandeDetail() {
         </CardContent>
       </Card>
 
-      <Button variant="outline" onClick={() => dupliquerMut.mutate()} disabled={dupliquerMut.isPending} className="w-full gap-2">
-        <RotateCw className="w-4 h-4" /> Répéter cette commande
+      <Button
+        variant="outline"
+        onClick={() => setShowDuplicateDialog(true)}
+        className="w-full gap-2">
+        <RotateCw className="w-4 h-4" />
+        Répéter cette commande
       </Button>
+
+      {/* ── ✅ Duplicate dialog ── */}
+      <Dialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Répéter la commande</DialogTitle>
+            <DialogDescription>
+              Les mêmes produits seront commandés.
+              Choisissez la nouvelle date de livraison.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <label className="text-sm font-medium">
+              Date de livraison souhaitée
+            </label>
+            <Input
+              type="date"
+              value={duplicateDate}
+              min={new Date(Date.now() + 86400000)
+                .toISOString().split('T')[0]}
+              onChange={(e) => setDuplicateDate(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDuplicateDialog(false)}>
+              Annuler
+            </Button>
+            <Button
+              onClick={() => dupliquerMut.mutate(duplicateDate)}
+              disabled={dupliquerMut.isPending}>
+              {dupliquerMut.isPending
+                ? 'Duplication...'
+                : 'Dupliquer la commande'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SubmitReviewModal
         open={reviewOpen}

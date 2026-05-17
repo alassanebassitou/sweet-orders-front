@@ -50,12 +50,15 @@ export const commandeService = {
     api.patch(`/admin/commandes/${id}/status`, { status, commentaire }).then(r => r.data),
   balance: (id: string | number) => api.get(`/commandes/${id}/balance`).then(r => r.data),
   paiements: (id: string | number) => api.get(`/commandes/${id}/payments`).then(r => r.data),
-  dupliquer: (id: string | number) => api.post(`/commandes/${id}/duplicate`).then(r => r.data),
+  dupliquer: (id: string | number, wishDeliveryDate: string) =>
+  api.post(`/commandes/${id}/duplicate`, {
+    wishDeliveryDate
+  }).then(r => r.data),
 };
 
 // ---- Paiements
 export const paiementService = {
-  enregistrer: (payload: any) => api.post('/admin/paiements', payload).then(r => r.data),
+  enregistrer: (payload: any) => api.post('/payments', payload).then(r => r.data),
 };
 
 // ---- Production

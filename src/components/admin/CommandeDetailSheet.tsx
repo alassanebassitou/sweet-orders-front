@@ -70,8 +70,8 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
   });
 
   const paiementMutation = useMutation({
-    mutationFn: (montant: number) =>
-      paiementService.enregistrer({ commandeId: commande.id, montant, modePaiement: 'ESPECES', typePaiement: 'COMPLEMENT' }),
+    mutationFn: (amount: number) =>
+      paiementService.enregistrer({ commandeId: commande.id, amount, paymentMode: 'CASH', paymentType: 'ACOMPTE' }),
     onSuccess: () => {
       toast.success('Paiement enregistré');
       setPaymentOpen(false);
@@ -116,7 +116,7 @@ export default function CommandeDetailSheet({ commande, onClose, onUpdated }: Pr
             <div className="space-y-2">
               {(commande.produits || commande.products || []).map((p: any, i: number) => (
                 <div key={i} className="p-3 rounded-lg bg-secondary/40 text-sm">
-                  <div className="flex justify-between"><span className="font-medium">{p.nom || p.productName} ×{p.quantite ?? p.quantity}</span><span>{formatFCFA(p.prixTotal || 0)}</span></div>
+                  <div className="flex justify-between"><span className="font-medium">{p.nom || p.productName} ×{p.quantite ?? p.quantity}</span><span>{formatFCFA(p.totalPrice || 0)}</span></div>
                   {p.cakeMessage && <p className="text-xs text-muted-foreground italic mt-1">Message : "{p.cakeMessage}"</p>}
                   {p.customizationJson && p.customizationJson.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-0.5">+ {(typeof p.customizationJson === 'string' ? p.customizationJson : p.customizationJson.join(', '))}</p>
