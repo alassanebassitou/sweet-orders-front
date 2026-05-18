@@ -47,6 +47,23 @@ export default function CategoriesPage() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['categories'] });
 
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const handleCategoryPhotoUpload = async (file?: File) => {
+    if (!file || !editing) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Fichier > 5MB'); return; }
+    setUploadingPhoto(true);
+    try {
+      const updated = await categoryService.uploadPhoto(editing.id, file);
+      setForm((f) => ({ ...f, photoUrl: updated.photoUrl }));
+      invalidate();
+      toast.success('Image mise à jour !');
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (payload: CategoryRequest) => categoryService.create(payload),
     onSuccess: () => {
