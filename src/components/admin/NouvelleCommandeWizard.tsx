@@ -353,7 +353,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               {acompteRecu === 'oui' && (
                 <div className="p-3 rounded-lg bg-success/10">
                   <p className="font-semibold">Acompte reçu</p>
-                  <p>{formatFCFA(paiement.montant)} via {MODES_PAIEMENT.find((m) => m.value === paiement.modePaiement)?.label}</p>
+                  <p>{formatFCFA(paiement.amount)} via {MODES_PAIEMENT.find((m) => m.value === paiement.paymentMode)?.label}</p>
                 </div>
               )}
             </div>
