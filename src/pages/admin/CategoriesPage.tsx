@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Pencil, Trash2, Tag } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Tag, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,23 @@ export default function CategoriesPage() {
   );
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['categories'] });
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const handleCategoryPhotoUpload = async (file?: File) => {
+    if (!file || !editing) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Fichier > 5MB'); return; }
+    setUploadingPhoto(true);
+    try {
+      const updated = await categoryService.uploadPhoto(editing.id, file);
+      setForm((f) => ({ ...f, photoUrl: updated.photoUrl }));
+      invalidate();
+      toast.success('Image mise à jour !');
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: (payload: CategoryRequest) => categoryService.create(payload),
@@ -215,15 +232,38 @@ export default function CategoriesPage() {
                 placeholder="Description de la catégorie..."
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cat-photo">Photo URL (optionnel)</Label>
-              <Input
-                id="cat-photo"
-                value={form.photoUrl}
-                onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
-                placeholder="Laissez vide pour une icône auto"
-              />
-            </div>
+            {editing ? (
+              <div className="space-y-2">
+                <Label>Image de la catégorie (optionnel)</Label>
+                {form.photoUrl ? (
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border group">
+                    <img src={form.photoUrl} alt="Category" className="w-full h-full object-cover" />
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <div className="text-white text-center">
+                        <Upload className="w-5 h-5 mx-auto" />
+                        <span className="text-xs">Changer</span>
+                      </div>
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                        onChange={(e) => handleCategoryPhotoUpload(e.target.files?.[0])} />
+                    </label>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-secondary">
+                    <ImageIcon className="w-6 h-6 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground">Ajouter une image</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      onChange={(e) => handleCategoryPhotoUpload(e.target.files?.[0])} />
+                  </label>
+                )}
+                {uploadingPhoto && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Envoi en cours...
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Vous pourrez ajouter une image après la création.</p>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setCreateOpen(false); setEditing(null); setForm(emptyForm); }}>
                 Annuler

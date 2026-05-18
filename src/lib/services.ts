@@ -34,6 +34,22 @@ export const productService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data);
   },
+  uploadMainPhoto: (id: string | number, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/admin/produits/${id}/photo`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
+  addPhoto: (id: string | number, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/admin/produits/${id}/photos`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
+  deletePhoto: (id: string | number, photoUrl: string) =>
+    api.delete(`/admin/produits/${id}/photos`, { params: { url: photoUrl } }).then(r => r.data),
   getPersonnalisations: (id: string | number) =>
     api.get(`/products/${id}/customization`).then(r => r.data),
   addPersonnalisation: (id: string | number, payload: any) =>
@@ -142,6 +158,13 @@ export const categoryService = {
   update: (id: number, payload: CategoryRequest) =>
     api.put(`/categories/${id}`, payload).then(r => r.data),
   delete: (id: number) => api.delete(`/categories/${id}`).then(r => r.data),
+  uploadPhoto: (id: number, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/admin/categories/${id}/photo`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
 };
 
 // ---- Kkiapay

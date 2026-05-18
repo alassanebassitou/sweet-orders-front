@@ -314,17 +314,17 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               </div>
               {acompteRecu === 'oui' && (
                 <div className="space-y-3 p-3 rounded-lg border border-border">
-                  <div><Label>Montant reçu (FCFA)</Label><Input type="number" value={paiement.montant} onChange={(e) => setPaiement({ ...paiement, montant: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+                  <div><Label>Montant reçu (FCFA)</Label><Input type="number" value={paiement.amount} onChange={(e) => setPaiement({ ...paiement, amount: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
                   <div>
                     <Label>Mode de paiement</Label>
-                    <Select value={paiement.modePaiement} onValueChange={(v) => setPaiement({ ...paiement, modePaiement: v })}>
+                    <Select value={paiement.paymentMode} onValueChange={(v) => setPaiement({ ...paiement, paymentMode: v })}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {MODES_PAIEMENT.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label>Date</Label><Input type="date" value={paiement.datePaiement} onChange={(e) => setPaiement({ ...paiement, datePaiement: e.target.value })} className="mt-1" /></div>
+                  <div><Label>Date</Label><Input type="date" value={paiement.paymentDate} onChange={(e) => setPaiement({ ...paiement, paymentDate: e.target.value })} className="mt-1" /></div>
                   <div><Label>Notes</Label><Textarea value={paiement.notes} onChange={(e) => setPaiement({ ...paiement, notes: e.target.value })} placeholder="Reçu via WhatsApp..." className="mt-1" /></div>
                 </div>
               )}
@@ -353,7 +353,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               {acompteRecu === 'oui' && (
                 <div className="p-3 rounded-lg bg-success/10">
                   <p className="font-semibold">Acompte reçu</p>
-                  <p>{formatFCFA(paiement.montant)} via {MODES_PAIEMENT.find((m) => m.value === paiement.modePaiement)?.label}</p>
+                  <p>{formatFCFA(paiement.amount)} via {MODES_PAIEMENT.find((m) => m.value === paiement.paymentMode)?.label}</p>
                 </div>
               )}
             </div>

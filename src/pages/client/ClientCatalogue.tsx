@@ -4,18 +4,30 @@ import { CakeSlice } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { productService } from '@/lib/services';
+import { productService, categoryService } from '@/lib/services';
 import { ProductRatingBadge } from '@/components/client/ProductRatingBadge';
-import { CATEGORIES } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 import { cn } from '@/lib/utils';
 
 export default function ClientCatalogue() {
   const navigate = useNavigate();
-  const [cat, setCat] = useState('ALL');
+  const [cat, setCat] = useState('all');
   const { data: products = [], isLoading, isError, refetch } = useQuery({ queryKey: ['products'], queryFn: productService.list });
-  const filtered = (products as any[]).filter((p) => p.estActif !== false).filter((p) => cat === 'ALL' || p.categorie === cat);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const filtered = (products as any[])
+    .filter((p) => p.estActif !== false && p.isActif !== false)
+    .filter((p) =>
+      cat === 'all' ||
+      p.categoryId?.toString() === cat ||
+      p.categorie === cat ||
+      p.category === cat
+    );
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -25,12 +37,38 @@ export default function ClientCatalogue() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-        {CATEGORIES.map((c) => (
-          <button key={c.value} onClick={() => setCat(c.value)} className={cn(
+        <button
+          onClick={() => setCat('all')}
+          className={cn(
             'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors',
-            cat === c.value ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:bg-secondary'
-          )}>{c.label}</button>
-        ))}
+            cat === 'all'
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-card border-border text-muted-foreground hover:bg-secondary'
+          )}
+        >
+          Tous
+        </button>
+        {(categories as any[]).map((c) => {
+          const value = c.id.toString();
+          const active = cat === value || cat === c.name;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setCat(value)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors flex items-center gap-2',
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card border-border text-muted-foreground hover:bg-secondary'
+              )}
+            >
+              {c.photoUrl && (
+                <img src={c.photoUrl} alt={c.name} className="w-4 h-4 rounded-full object-cover" />
+              )}
+              {c.name}
+            </button>
+          );
+        })}
       </div>
 
       {isLoading ? <LoadingState /> :
