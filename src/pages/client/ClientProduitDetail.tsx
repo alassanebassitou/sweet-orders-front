@@ -26,6 +26,7 @@ export default function ClientProduitDetail() {
   const [allergenes, setAllergenes] = useState('');
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const addItem = useCartStore((s) => s.addItem);
   const product = productQ.data;
