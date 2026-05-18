@@ -13,6 +13,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState } from '@/components/common/StateViews';
 import { ReviewsSection } from '@/components/client/ReviewsSection';
+import { cn } from '@/lib/utils';
 
 export default function ClientProduitDetail() {
   const { id } = useParams();
