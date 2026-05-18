@@ -65,11 +65,41 @@ export default function ClientProduitDetail() {
   return (
     <div className="animate-fade-in pb-32">
       <div className="aspect-[4/3] md:aspect-[16/7] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center relative">
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center hover:bg-card">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-card/80 backdrop-blur flex items-center justify-center hover:bg-card z-10">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        {product.photoUrl ? <img src={product.photoUrl} alt={product.name} className="w-full h-full object-cover" /> : <CakeSlice className="w-32 h-32 text-primary/60" />}
+        {(selectedPhoto || product.photoUrl) ? (
+          <img src={selectedPhoto || product.photoUrl} alt={product.name} className="w-full h-full object-cover" />
+        ) : <CakeSlice className="w-32 h-32 text-primary/60" />}
       </div>
+
+      {product.additionalPhotos?.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto px-4 md:px-6 pt-3">
+          {product.photoUrl && (
+            <button
+              onClick={() => setSelectedPhoto(product.photoUrl)}
+              className={cn(
+                'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2',
+                (selectedPhoto === product.photoUrl || !selectedPhoto) ? 'border-primary' : 'border-transparent'
+              )}
+            >
+              <img src={product.photoUrl} alt="Principal" className="w-full h-full object-cover" />
+            </button>
+          )}
+          {product.additionalPhotos.map((url: string, i: number) => (
+            <button
+              key={url + i}
+              onClick={() => setSelectedPhoto(url)}
+              className={cn(
+                'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2',
+                selectedPhoto === url ? 'border-primary' : 'border-transparent'
+              )}
+            >
+              <img src={url} alt={`Photo ${i + 2}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="p-4 md:p-6 space-y-6">
         <div>
