@@ -21,13 +21,17 @@ export default function ClientCatalogue() {
   });
 
   const filtered = (products as any[])
-    .filter((p) => p.estActif !== false && p.isActif !== false)
+    .filter((p) => p.isActif !== false)
     .filter((p) =>
-      cat === 'all' ||
-      p.categoryId?.toString() === cat ||
-      p.categorie === cat ||
-      p.category === cat
+      cat === 'all' /* ||
+      p.categoryId?.toString() === cat 
+      || p.categorie === cat  */
+      || p.category === cat
     );
+
+    console.log("Products: ", products);
+    console.log("Categories: ", categories);
+    console.log("Filtered: ", filtered);
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -49,8 +53,8 @@ export default function ClientCatalogue() {
           Tous
         </button>
         {(categories as any[]).map((c) => {
-          const value = c.id.toString();
-          const active = cat === value || cat === c.name;
+          const value = c.name;
+          const active = cat === value;
           return (
             <button
               key={c.id}

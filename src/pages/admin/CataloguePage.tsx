@@ -31,7 +31,7 @@ interface FormData {
   name: string;
   description: string;
   basePrice: number;
-  categoryId: number | '';
+  category: number | '';
 }
 
 export default function CataloguePage() {
@@ -47,7 +47,7 @@ export default function CataloguePage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, categoryId: '' });
+  const [form, setForm] = useState<FormData>({ name: '', description: '', basePrice: 0, category: '' });
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
   const [uploadingMain, setUploadingMain] = useState(false);
@@ -82,7 +82,7 @@ export default function CataloguePage() {
     setEditing(null);
     setForm({
       name: '', description: '', basePrice: 0,
-      categoryId: (categories as any[])[0]?.id ?? '',
+      category: (categories as any[])[0]?.name ?? '',
     });
     setPhotoUrl('');
     setAdditionalPhotos([]);
@@ -94,7 +94,7 @@ export default function CataloguePage() {
       name: p.name,
       description: p.description || '',
       basePrice: p.basePrice,
-      categoryId: p.categoryId ?? (categories as any[]).find((c: any) => c.name === p.category)?.id ?? '',
+      category: p.category ?? (categories as any[]).find((c: any) => c.name === p.category)?.name ?? '',
     });
     setPhotoUrl(p.photoUrl || '');
     setAdditionalPhotos(p.additionalPhotos || []);
@@ -112,7 +112,7 @@ export default function CataloguePage() {
 
   const save = () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
-    if (!form.categoryId) { toast.error('Catégorie requise'); return; }
+    if (!form.category) { toast.error('Catégorie requise'); return; }
     if (editing) updateMut.mutate({ id: editing.id, payload: form as any });
     else createMut.mutate(form);
   };

@@ -37,19 +37,19 @@ export const productService = {
   uploadMainPhoto: (id: string | number, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post(`/admin/produits/${id}/photo`, fd, {
+    return api.post(`/admin/products/${id}/photo`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data);
   },
   addPhoto: (id: string | number, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post(`/admin/produits/${id}/photos`, fd, {
+    return api.post(`/admin/products/${id}/photos`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data);
   },
   deletePhoto: (id: string | number, photoUrl: string) =>
-    api.delete(`/admin/produits/${id}/photos`, { params: { url: photoUrl } }).then(r => r.data),
+    api.delete(`/admin/products/${id}/photos`, { params: { url: photoUrl } }).then(r => r.data),
   getPersonnalisations: (id: string | number) =>
     api.get(`/products/${id}/customization`).then(r => r.data),
   addPersonnalisation: (id: string | number, payload: any) =>
@@ -152,7 +152,7 @@ export interface CategoryRequest {
   photoUrl?: string;
 }
 export const categoryService = {
-  getAll: () => api.get('/categories').then(r => r.data),
+  getAll: () => api.get('/categories/all').then(r => r.data),
   getById: (id: number) => api.get(`/categories/${id}`).then(r => r.data),
   create: (payload: CategoryRequest) => api.post('/categories', payload).then(r => r.data),
   update: (id: number, payload: CategoryRequest) =>
@@ -161,7 +161,7 @@ export const categoryService = {
   uploadPhoto: (id: number, file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post(`/admin/categories/${id}/photo`, fd, {
+    return api.post(`/categories/${id}/photo`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then(r => r.data);
   },
