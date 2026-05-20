@@ -180,8 +180,8 @@ export default function CataloguePage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {(produits as any[]).map((p: any) => (
             <Card key={p.id} className="overflow-hidden shadow-sm">
-              <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="w-full h-full object-cover" /> : <CakeSlice className="w-12 h-12 text-primary/60" />}
+              <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
+                {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="absolute inset-0 w-full h-full object-cover" /> : <CakeSlice className="w-12 h-12 text-primary/60" />}
               </div>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-start justify-between">

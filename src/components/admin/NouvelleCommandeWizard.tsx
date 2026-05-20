@@ -47,13 +47,15 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     lastname: '', firstname: '', phone: '', email: '', address: '', city: '',
   });
 
+  console.log("New client: ", newClient);
+
   // Step 2 — Produits
   const [lignes, setLignes] = useState<LigneProduit[]>([]);
 
   // Step 3 — Livraison
   const [dateLivraison, setDateLivraison] = useState('');
   const [creneau, setCreneau] = useState('matin');
-  const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_IN_SITE'>('HOME_DELIVERY');
+  const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_ON_SITE'>('HOME_DELIVERY');
   const [adresse, setAdresse] = useState('');
   const [instructions, setInstructions] = useState('');
 
@@ -143,10 +145,20 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const canNext = () => {
     if (step === 0) return !!selectedClient;
     if (step === 1) return lignes.length > 0;
-    if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_IN_SITE' || !!adresse);
+    if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_ON_SITE' || !!adresse);
     if (step === 3) return acompteRecu === 'non' || (paiement.amount > 0);
     return true;
   };
+
+  // ✅ Clear address when switching mode
+const handleModeChange = (newMode: 'HOME_DELIVERY' | 'COLLECTION_ON_SITE') => {
+  setMode(newMode);
+  // Clear address when switching to pickup — prevents stale value blocking the button
+  if (newMode === 'COLLECTION_ON_SITE') {
+    setAdresse('');
+    setInstructions('');
+  }
+};
 
   const addProduit = (p: any) => {
     setLignes((prev) => [...prev, {
@@ -236,7 +248,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
                   <SelectContent>
                     {(productsQ.data || []).map((p: any) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name || p.nom} — {formatFCFA(p.basePrice ?? p.prixBase ?? p.price ?? 0)}
+                        {p.name} — {formatFCFA(p.basePrice ?? 0)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -284,7 +296,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
               </div>
               <div>
                 <Label>Mode</Label>
-                <RadioGroup value={mode} onValueChange={(v) => setMode(v as any)} className="mt-2 space-y-2">
+                <RadioGroup value={mode} onValueChange={(v) => handleModeChange(v as any)} className="mt-2 space-y-2">
                   <label className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer">
                     <RadioGroupItem value="HOME_DELIVERY" /><span className="text-sm">Livraison à domicile</span>
                   </label>
@@ -336,7 +348,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
             <div className="space-y-3 text-sm">
               <div className="p-3 rounded-lg bg-secondary/40">
                 <p className="font-semibold">Client</p>
-                <p>{selectedClient?.prenom} {selectedClient?.nom} — {selectedClient?.telephone}</p>
+                <p>{selectedClient?.firstname} {selectedClient?.lastname} — {selectedClient?.telephone}</p>
               </div>
               <div className="p-3 rounded-lg bg-secondary/40 space-y-1">
                 <p className="font-semibold">Produits</p>
