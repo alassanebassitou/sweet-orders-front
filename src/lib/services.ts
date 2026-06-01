@@ -75,6 +75,9 @@ export const commandeService = {
 // ---- Paiements
 export const paiementService = {
   enregistrer: (payload: any) => api.post('/payments', payload).then(r => r.data),
+  verifyPayment: (commandeId: string | number): Promise<boolean> =>
+    api.get(`/payments/verification/${commandeId}`)
+      .then(r => r.data.verified as boolean),
 };
 
 // ---- Production
@@ -132,8 +135,8 @@ export const parametreService = {
   creerZone: (payload: any) => api.post('/delivery-zones', payload).then(r => r.data),
   supprimerZone: (id: string | number) => api.delete(`/delivery-zones/${id}`).then(r => r.data),
   templates: () => api.get('/templates-messages').then(r => r.data),
-  updateTemplate: (id: string | number, contenu: string) =>
-    api.put(`/templates-messages/${id}`, { contenu }).then(r => r.data),
+  updateTemplate: (id: string | number, content: string) =>
+    api.put(`/templates-messages/${id}`, { content }).then(r => r.data),
 };
 
 // ---- Notifications

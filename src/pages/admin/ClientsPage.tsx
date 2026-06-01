@@ -26,6 +26,7 @@ export default function ClientsPage() {
   const selected = clients.find((c: any) => c.id === selectedClientId);
 
   console.log("clients", clients);
+  console.log("filtered", filtered);
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">

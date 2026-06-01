@@ -31,15 +31,17 @@ export default function DashboardPage() {
   );
   const recents = commandes.slice(0, 5);
 
+  console.log("Dashboard data", { dashboard, commandes, livraisons, alertes });
+
   const revenuChart = useMemo(() => {
-    if (!dashboard?.revenuParMois) return [];
-    return dashboard.revenuParMois.map((r: any) => ({
-      date: r.mois || r.date,
-      montant: r.revenu || r.montant || 0,
+    if (!dashboard?.revenueByMonth) return [];
+    return dashboard.revenueByMonth.map((r: any) => ({
+      date: r.month,
+      montant: r.revenue || 0,
     }));
   }, [dashboard]);
 
-  const topProduits = dashboard?.topProduits || [];
+  const topProducts = dashboard?.topProducts || [];
 
   const isLoading = dashboardQ.isLoading || commandesQ.isLoading;
   const isError = dashboardQ.isError && commandesQ.isError;
@@ -128,15 +130,15 @@ export default function DashboardPage() {
           <CardHeader className="pb-2"><CardTitle className="text-base">Top produits</CardTitle></CardHeader>
           <CardContent>
             <div className="h-52">
-              {topProduits.length === 0 ? (
+              {topProducts.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Aucune donnée</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topProduits} layout="vertical">
+                  <BarChart data={topProducts} layout="vertical">
                     <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(20, 10%, 45%)" />
-                    <YAxis type="category" dataKey="nom" tick={{ fontSize: 11 }} width={100} stroke="hsl(20, 10%, 45%)" />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} stroke="hsl(20, 10%, 45%)" />
                     <Tooltip />
-                    <Bar dataKey="commandes" fill="hsl(18, 45%, 57%)" radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="commande" fill="hsl(18, 45%, 57%)" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

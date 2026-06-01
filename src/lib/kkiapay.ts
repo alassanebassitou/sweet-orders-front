@@ -16,6 +16,7 @@ const loadSdk = (): Promise<void> => {
   if (typeof window === 'undefined') return Promise.reject(new Error('No window'));
   if (window.openKkiapayWidget) return Promise.resolve();
   if (sdkPromise) return sdkPromise;
+
   sdkPromise = new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${SDK_URL}"]`) as HTMLScriptElement | null;
     if (existing) {
@@ -41,6 +42,73 @@ interface KkiapayOptions {
   onFailure?: (error: any) => void;
 }
 
+// Mapper pour les échecs directs du widget (avant même la vérification backend)
+const mapWidgetFailureCode = (error: any): string => {
+  const raw =
+  error?.reason?.message ||
+    error?.failureCode ||
+    error?.code ||
+    error?.status ||
+    error?.data?.failureCode ||
+    error?.data?.code ||
+    '';
+  const code = String(raw).toLowerCase().trim();
+
+  const statusMap: Record<string, string> = {
+    'insufficent_fund':  'insufficient_fund',
+    'payment_declined':   'declined',
+    'processing_error':   'error',
+  };
+
+  return statusMap[code] ?? 'error';
+};
+
+// ✅ Fonction séparée — vérification backend puis redirection
+const verifyAndRedirect = async (
+  transactionId: string,
+  commandeId: number | string,
+  paidAmount: number,
+  onSuccess?: (transactionId: string) => void,
+  onFailure?: (error: any) => void,
+) => {
+  let frontendStatus = 'error'; // fallback
+
+  try {
+    const response = await api.post('/payments/kkiapay/verify', {
+      transactionId,
+      commandeId,
+    });
+
+    // ✅ Succès backend → on lit la réponse AVANT de rediriger
+    console.log('[Kkiapay] Backend verify success:', response.data);
+    frontendStatus = 'success';
+    onSuccess?.(transactionId);
+
+  } catch (err: any) {
+    // ✅ On lit la réponse d'erreur AVANT de rediriger
+    const responseData = err?.response?.data;
+    console.log('[Kkiapay] Backend verify error response:', responseData);
+    console.log('[Kkiapay] HTTP status:', err?.response?.status);
+
+    // Le backend renvoie frontendStatus dans le body de l'erreur
+    frontendStatus = responseData?.frontendStatus ?? 'error';
+    console.log('[Kkiapay] Resolved frontendStatus:', frontendStatus);
+    onFailure?.(err);
+  }
+
+  // ✅ Redirection APRÈS avoir tout lu
+  console.log('[Kkiapay] Redirecting with status:', frontendStatus);
+
+  const params = new URLSearchParams({
+    status: frontendStatus,
+    commandeId: String(commandeId),
+    ...(frontendStatus === 'success' && transactionId ? { transactionId } : {}),
+    ...(frontendStatus === 'success' && paidAmount    ? { amount: String(paidAmount) } : {}),
+  });
+
+  window.location.href = `/app/paiement/resultat?${params.toString()}`;
+};
+
 export const payWithKkiapay = async ({
   amount,
   commandeId,
@@ -48,64 +116,57 @@ export const payWithKkiapay = async ({
   onSuccess,
   onFailure,
 }: KkiapayOptions) => {
+
+  const cleanup = () => {
+    window.removeKkiapayListener?.('success', successHandler);
+    window.removeKkiapayListener?.('failed',  failureHandler);
+    window.removeKkiapayListener?.('failure', failureHandler);
+  };
+
+  const successHandler = async ({ transactionId, amount: paidAmount }: any) => {
+    // On cleanup d'abord, puis on vérifie, puis on redirige
+    cleanup();
+    console.log('[Kkiapay] Widget success event — transactionId:', transactionId, 'amount:', paidAmount);
+
+    // Appel séparé qui gère tout : vérif backend → lecture réponse → redirection
+    await verifyAndRedirect(transactionId, commandeId, paidAmount || amount, onSuccess, onFailure);
+  };
+
+  const failureHandler = (error: any) => {
+    cleanup();
+    // Ici le widget a échoué AVANT la vérification backend (ex: PIN incorrect, annulation)
+    console.log('[Kkiapay] Widget failure event — full payload:', JSON.stringify(error, null, 2));
+
+    const status = mapWidgetFailureCode(error);
+    console.log('[Kkiapay] Mapped widget failure status:', status);
+
+    // Redirection directe, pas besoin de vérifier le backend
+    window.location.href = `/app/paiement/resultat?status=${status}&commandeId=${commandeId}`;
+    onFailure?.(error);
+  };
+
   try {
     await loadSdk();
     const { data: config } = await api.get('/payments/kkiapay/config');
 
-    const successHandler = async ({ transactionId, amount: paidAmount }: any) => {
-      try {
-        await api.post('/payments/kkiapay/verify', { transactionId, commandeId });
-        window.removeKkiapayListener?.('success', successHandler);
-        window.removeKkiapayListener?.('failed', failureHandler);
-        // Navigate to result page
-        const resultUrl = `/app/paiement/resultat?status=success&commandeId=${commandeId}&transactionId=${transactionId}&amount=${paidAmount || amount}`;
-        window.location.href = resultUrl;
-        onSuccess?.(transactionId);
-      } catch (err) {
-        window.removeKkiapayListener?.('success', successHandler);
-        window.removeKkiapayListener?.('failed', failureHandler);
-        const errorUrl = `/app/paiement/resultat?status=error&commandeId=${commandeId}`;
-        window.location.href = errorUrl;
-        onFailure?.(err);
-      }
-    };
-
-    const failureHandler = (error: any) => {
-      window.removeKkiapayListener?.('success', successHandler);
-      window.removeKkiapayListener?.('failed', failureHandler);
-
-      const failureCode = error?.failureCode || error?.code || 'error';
-      const statusMap: Record<string, string> = {
-        'insufficient_fund': 'insufficient_funds',
-        'insufficient_funds': 'insufficient_funds',
-        'processing_error': 'error',
-        'invalid_number': 'error',
-        'declined': 'declined',
-        'transaction_denied': 'declined',
-      };
-      const status = statusMap[failureCode] || 'error';
-
-      const errorUrl = `/app/paiement/resultat?status=${status}&commandeId=${commandeId}`;
-      window.location.href = errorUrl;
-      onFailure?.(error);
-    };
-
     window.addKkiapayListener?.('success', successHandler);
-    window.addKkiapayListener?.('failed', failureHandler);
+    window.addKkiapayListener?.('failed',  failureHandler);
+    window.addKkiapayListener?.('failure', failureHandler);
 
     window.openKkiapayWidget?.({
       amount,
-      key: config.publicKey,
+      key:     config.publicKey,
       sandbox: !!config.sandbox,
-      phone: clientInfo.telephone,
-      name: clientInfo.name,
-      email: clientInfo.email,
-      data: String(commandeId),
+      phone:   clientInfo.telephone,
+      name:    clientInfo.name,
+      email:   clientInfo.email,
+      data:    String(commandeId),
     });
+
   } catch (err) {
+    console.error('[Kkiapay] Init failed:', err);
     toast.error("Impossible d'initialiser le paiement.");
-    const errorUrl = `/app/paiement/resultat?status=error&commandeId=${commandeId}`;
-    window.location.href = errorUrl;
+    window.location.href = `/app/paiement/resultat?status=error&commandeId=${commandeId}`;
     onFailure?.(err);
   }
 };

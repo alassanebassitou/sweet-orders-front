@@ -11,7 +11,7 @@ const ADMIN_PHONE_FALLBACK = '22500000000';
 function useParametres() {
   return useQuery({
     queryKey: ['parametres-public'],
-    queryFn: () => api.get('/parametres').then(r => r.data),
+    queryFn: () => api.get('/settings').then(r => r.data),
     retry: 1,
   });
 }
@@ -263,7 +263,7 @@ export default function PaymentResultPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const status = searchParams.get('status') as 'success' | 'error' | 'insufficient_funds' | 'declined' | null;
+  const status = searchParams.get('status') as 'success' | 'error' | 'insufficient_fund' | 'declined' | null;
   const commandeId = searchParams.get('commandeId');
   const transactionId = searchParams.get('transactionId');
   const amount = searchParams.get('amount');
@@ -271,10 +271,12 @@ export default function PaymentResultPage() {
   const { data: params } = useParametres();
   const adminPhone = params?.telephoneWhatsapp || ADMIN_PHONE_FALLBACK;
 
+  console.log('PaymentResultPage rendered with status:', status, 'commandeId:', commandeId, 'transactionId:', transactionId, 'amount:', amount);
+
   const bgClass = {
     success: 'bg-gradient-to-b from-green-50 to-white',
     error: 'bg-gradient-to-b from-red-50 to-white',
-    insufficient_funds: 'bg-gradient-to-b from-orange-50 to-white',
+    insufficient_fund: 'bg-gradient-to-b from-orange-50 to-white',
     declined: 'bg-gradient-to-b from-amber-50 to-white',
   }[status || 'error'];
 
@@ -306,7 +308,7 @@ export default function PaymentResultPage() {
         onViewOrder={handleViewOrder}
       />
     ),
-    insufficient_funds: (
+    insufficient_fund: (
       <InsufficientFundsScenario
         commandeId={commandeId}
         amount={amount}
@@ -327,7 +329,7 @@ export default function PaymentResultPage() {
   return (
     <div className={`min-h-screen ${bgClass} flex items-center justify-center p-4`}>
       <div className="max-w-md w-full">
-        {scenarios[status || 'error']}
+        {scenarios[status || 'error'] ?? scenarios['error']}
       </div>
     </div>
   );
