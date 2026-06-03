@@ -18,6 +18,7 @@ const navItems = [
   { path: '/admin/catalogue', label: 'Catalogue', icon: CakeSlice },
   { path: '/admin/categories', label: 'Catégories', icon: Tag },
   { path: '/admin/avis', label: 'Avis', icon: Star },
+  { path: '/admin/messages', label: 'Messages WhatsApp', icon: MessageCircle },
   { path: '/admin/finances', label: 'Finances', icon: Wallet },
   { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
 ];
