@@ -219,8 +219,8 @@ export default function CataloguePage() {
               <div>
                 <Label>Catégorie</Label>
                 <Select
-                  value={form.categoryId ? String(form.categoryId) : ''}
-                  onValueChange={(v) => setForm({ ...form, categoryId: Number(v) })}
+                  value={form.category ? String(form.category) : ''}
+                  onValueChange={(v) => setForm({ ...form, category: Number(v) })}
                 >
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
                   <SelectContent>
