@@ -27,6 +27,27 @@ export default function CommandesPage() {
     queryFn: () => commandeService.listAdmin(statutFilter !== 'ALL' ? { status: statutFilter } : {}),
   });
 
+  const { data: templates = [] } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => parametreService.templates(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['parametres'],
+    queryFn: parametreService.get,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const patisserie = {
+    nom: (settings as any)?.namePatisserie,
+    telephone: (settings as any)?.whatsappPhoneNumber,
+  };
+
+  const handleSendWhatsApp = (commande: any) => {
+    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
+  };
+
   const filtered = useMemo(() => commandes.filter((c: any) =>
     (c.clientName || '').toLowerCase().includes(search.toLowerCase()) ||
     (c.numero || '').toLowerCase().includes(search.toLowerCase())
