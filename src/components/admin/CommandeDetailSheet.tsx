@@ -61,6 +61,24 @@ export default function CommandeDetailSheet({
     enabled: !!commande.id,
   });
   const depenses = depensesQ.data || [];
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => parametreService.templates(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: settings } = useQuery({
+    queryKey: ['parametres'],
+    queryFn: parametreService.get,
+    staleTime: 5 * 60 * 1000,
+  });
+  const patisserie = {
+    nom: (settings as any)?.namePatisserie,
+    telephone: (settings as any)?.whatsappPhoneNumber,
+  };
+  const handleSendWhatsApp = () => {
+    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
+  };
   const totalDepenses = depenses.reduce(
     (s: number, d: any) => s + (d.amount ?? d.montant ?? 0),
     0
