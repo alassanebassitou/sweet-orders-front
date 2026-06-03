@@ -15,7 +15,6 @@ export default function ParametresPage() {
   const qc = useQueryClient();
   const paramsQ = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
   const zonesQ = useQuery({ queryKey: ['zones'], queryFn: parametreService.zones });
-  const templatesQ = useQuery({ queryKey: ['templates'], queryFn: parametreService.templates });
 
   const [params, setParams] = useState<any>({});
   const [newZone, setNewZone] = useState({ name: '', deliveryFrees: 0 });
@@ -33,22 +32,16 @@ export default function ParametresPage() {
     onSuccess: () => { toast.success('Zone ajoutée'); setNewZone({ name: '', deliveryFrees: 0 }); qc.invalidateQueries({ queryKey: ['zones'] }); },
     onError: () => toast.error('Erreur'),
   });
-  
+
   const removeZoneMut = useMutation({
     mutationFn: (id: any) => parametreService.supprimerZone(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['zones'] }),
-    onError: () => toast.error('Erreur'),
-  });
-  const updateTemplateMut = useMutation({
-    mutationFn: ({ id, contenu }: any) => parametreService.updateTemplate(id, contenu),
-    onSuccess: () => { toast.success('Template enregistré'); qc.invalidateQueries({ queryKey: ['templates'] }); },
     onError: () => toast.error('Erreur'),
   });
 
   if (paramsQ.isLoading) return <div className="p-6"><LoadingState /></div>;
 
   const zones = zonesQ.data || [];
-  const templates = templatesQ.data || [];
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -102,30 +95,22 @@ export default function ParametresPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Templates WhatsApp</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {templates.length === 0 && <p className="text-sm text-muted-foreground">Aucun template</p>}
-          {templates.map((t: any) => (
-            <TemplateEditor key={t.id} template={t} onSave={(contenu) => updateTemplateMut.mutate({ id: t.id, contenu })} />
-          ))}
-          <p className="text-xs text-muted-foreground">Variables : {'{Prenom}'}, {'{Numero}'}, {'{Acompte}'}, {'{Solde}'}, {'{DateLivraison}'}</p>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageCircle className="w-4 h-4 text-primary" /> Templates WhatsApp</CardTitle></CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            La gestion des templates WhatsApp se fait maintenant dans une page dédiée.
+          </p>
+          <Link to="/admin/messages">
+            <Button variant="outline" className="gap-2">
+              Gérer les templates <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 
       <Button onClick={() => updateMut.mutate(params)} disabled={updateMut.isPending} className="gap-2">
         <Save className="w-4 h-4" /> Enregistrer
       </Button>
-    </div>
-  );
-}
-
-function TemplateEditor({ template, onSave }: { template: any; onSave: (s: string) => void }) {
-  const [contenu, setContenu] = useState(template.content || '');
-  return (
-    <div>
-      <Label>{template.libelle || template.code || 'Template'}</Label>
-      <Textarea value={contenu} onChange={(e) => setContenu(e.target.value)} className="mt-1" rows={2} />
-      <Button size="sm" variant="outline" className="mt-1" onClick={() => onSave(contenu)}>Sauvegarder</Button>
     </div>
   );
 }
