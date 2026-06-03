@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
 import NouvelleCommandeWizard from '@/components/admin/NouvelleCommandeWizard';
-import { commandeService } from '@/lib/services';
+import { commandeService, parametreService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
+import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
 
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
