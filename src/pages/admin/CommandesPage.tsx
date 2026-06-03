@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
 import NouvelleCommandeWizard from '@/components/admin/NouvelleCommandeWizard';
-import { commandeService } from '@/lib/services';
+import { commandeService, parametreService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
+import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
 
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
@@ -24,6 +26,27 @@ export default function CommandesPage() {
     queryKey: ['commandes', statutFilter],
     queryFn: () => commandeService.listAdmin(statutFilter !== 'ALL' ? { status: statutFilter } : {}),
   });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => parametreService.templates(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['parametres'],
+    queryFn: parametreService.get,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const patisserie = {
+    nom: (settings as any)?.namePatisserie,
+    telephone: (settings as any)?.whatsappPhoneNumber,
+  };
+
+  const handleSendWhatsApp = (commande: any) => {
+    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
+  };
 
   const filtered = useMemo(() => commandes.filter((c: any) =>
     (c.clientName || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -102,6 +125,17 @@ export default function CommandesPage() {
                         <p className="text-xs text-success mt-1">Payé ✓</p>
                       )}
                     </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(c); }}
+                      className="gap-1 text-success border-success/40 hover:bg-success/10"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      {getWhatsAppButtonLabel(c.status)}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Users, Truck, ChefHat,
-  CakeSlice, Wallet, Bell, Settings, LogOut, Menu, X, Tag, Star
+  CakeSlice, Wallet, Bell, Settings, LogOut, Menu, X, Tag, Star, MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/admin/catalogue', label: 'Catalogue', icon: CakeSlice },
   { path: '/admin/categories', label: 'Catégories', icon: Tag },
   { path: '/admin/avis', label: 'Avis', icon: Star },
+  { path: '/admin/messages', label: 'Messages WhatsApp', icon: MessageCircle },
   { path: '/admin/finances', label: 'Finances', icon: Wallet },
   { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
 ];

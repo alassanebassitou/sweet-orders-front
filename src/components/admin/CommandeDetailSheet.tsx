@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
-import { commandeService, paiementService, financeService } from '@/lib/services';
+import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
+import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,24 @@ export default function CommandeDetailSheet({
     enabled: !!commande.id,
   });
   const depenses = depensesQ.data || [];
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => parametreService.templates(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: settings } = useQuery({
+    queryKey: ['parametres'],
+    queryFn: parametreService.get,
+    staleTime: 5 * 60 * 1000,
+  });
+  const patisserie = {
+    nom: (settings as any)?.namePatisserie,
+    telephone: (settings as any)?.whatsappPhoneNumber,
+  };
+  const handleSendWhatsApp = () => {
+    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
+  };
   const totalDepenses = depenses.reduce(
     (s: number, d: any) => s + (d.amount ?? d.montant ?? 0),
     0
@@ -456,19 +475,28 @@ export default function CommandeDetailSheet({
               )
             )}
 
-            {/* WhatsApp */}
+            {/* WhatsApp — template-based message */}
+            <Button
+              variant="outline"
+              onClick={handleSendWhatsApp}
+              className="w-full gap-2 text-success border-success/40 hover:bg-success/10">
+              <MessageCircle className="w-4 h-4" />
+              {getWhatsAppButtonLabel(commande.status || commande.statut)}
+            </Button>
+
             {commande.clientTelephone && (
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() =>
                   window.open(
                     `https://wa.me/${commande.clientTelephone.replace('+', '')}`,
                     '_blank'
                   )
                 }
-                className="w-full gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Contacter sur WhatsApp
+                className="w-full gap-2 text-xs">
+                <MessageCircle className="w-3.5 h-3.5" />
+                Ouvrir WhatsApp sans message
               </Button>
             )}
 

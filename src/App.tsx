@@ -24,6 +24,7 @@ import CategoriesPage from "@/pages/admin/CategoriesPage";
 import AvisPage from "@/pages/admin/AvisPage";
 import FinancesPage from "@/pages/admin/FinancesPage";
 import NotificationsPage from "@/pages/admin/NotificationsPage";
+import MessagesPage from "@/pages/admin/MessagesPage";
 import ParametresPage from "@/pages/admin/ParametresPage";
 
 import ClientHome from "@/pages/client/ClientHome";
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="catalogue" element={<CataloguePage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="avis" element={<AvisPage />} />
+              <Route path="messages" element={<MessagesPage />} />
               <Route path="finances" element={<FinancesPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="parametres" element={<ParametresPage />} />
