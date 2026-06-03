@@ -475,19 +475,28 @@ export default function CommandeDetailSheet({
               )
             )}
 
-            {/* WhatsApp */}
+            {/* WhatsApp — template-based message */}
+            <Button
+              variant="outline"
+              onClick={handleSendWhatsApp}
+              className="w-full gap-2 text-success border-success/40 hover:bg-success/10">
+              <MessageCircle className="w-4 h-4" />
+              {getWhatsAppButtonLabel(commande.status || commande.statut)}
+            </Button>
+
             {commande.clientTelephone && (
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() =>
                   window.open(
                     `https://wa.me/${commande.clientTelephone.replace('+', '')}`,
                     '_blank'
                   )
                 }
-                className="w-full gap-2">
-                <MessageCircle className="w-4 h-4" />
-                Contacter sur WhatsApp
+                className="w-full gap-2 text-xs">
+                <MessageCircle className="w-3.5 h-3.5" />
+                Ouvrir WhatsApp sans message
               </Button>
             )}
 
