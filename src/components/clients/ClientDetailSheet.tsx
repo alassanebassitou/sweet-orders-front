@@ -1,10 +1,11 @@
-import { X, Phone, Mail, MapPin, Star, MessageCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { X, Phone, Mail, MapPin, Star, MessageCircle, UserCheck, UserX } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { commandeService } from '@/lib/services';
+import { commandeService, userService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
+import { toast } from 'sonner';
 
 export default function ClientDetailSheet({ client, onClose }: { client: any; onClose: () => void }) {
   const { data: cmds = [] } = useQuery({
