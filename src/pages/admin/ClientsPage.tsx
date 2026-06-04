@@ -24,9 +24,30 @@ export default function ClientsPage() {
   });
 
   const clients = users.filter((u: any) => u.role === 'ROLE_CLIENT');
-  const filtered = clients.filter((c: any) =>
-    [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = clients.filter((c: any) => {
+    const matchSearch = [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
+    const isActive = c.actif || c.isActif;
+    const matchActive = activeFilter === 'all' ? true : activeFilter === 'active' ? isActive : !isActive;
+    return matchSearch && matchActive;
+  });
+
+  const activateMut = useMutation({
+    mutationFn: (id: number) => userService.activate(id),
+    onSuccess: () => {
+      toast.success('Client activé — un email de bienvenue a été envoyé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de l\'activation'),
+  });
+
+  const deactivateMut = useMutation({
+    mutationFn: (id: number) => userService.deactivate(id),
+    onSuccess: () => {
+      toast.success('Client désactivé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de la désactivation'),
+  });
   const selected = clients.find((c: any) => c.id === selectedClientId);
 
   console.log("clients", clients);
