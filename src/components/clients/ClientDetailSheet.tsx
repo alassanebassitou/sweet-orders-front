@@ -102,11 +102,6 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
               </div>
             ) : <p className="text-sm text-muted-foreground text-center py-4">Aucune commande</p>}
           </div>
-          {client.telephone && (
-            <Button className="w-full gap-2" onClick={() => window.open(`https://wa.me/${client.telephone.replace('+', '')}`, '_blank')}>
-              <MessageCircle className="w-4 h-4" /> Contacter sur WhatsApp
-            </Button>
-          )}
         </div>
       </div>
     </div>
