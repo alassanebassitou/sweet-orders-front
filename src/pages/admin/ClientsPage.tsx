@@ -68,6 +68,26 @@ export default function ClientsPage() {
         <Input placeholder="Rechercher par nom, téléphone ou ville..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      <div className="flex gap-2">
+        {[
+          { value: 'all', label: 'Tous' },
+          { value: 'active', label: 'Actifs' },
+          { value: 'inactive', label: 'Inactifs' },
+        ].map(f => (
+          <button
+            key={f.value}
+            onClick={() => setActiveFilter(f.value as any)}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+              activeFilter === f.value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            )}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? <LoadingState /> :
        isError ? <ErrorState message="Impossible de charger les clients" onRetry={refetch} /> :
        filtered.length === 0 ? <EmptyState message="Aucun client trouvé" icon={Users} /> : (
