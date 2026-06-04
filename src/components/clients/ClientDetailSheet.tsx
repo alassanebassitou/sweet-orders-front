@@ -8,9 +8,29 @@ import { formatFCFA } from '@/lib/format';
 import { toast } from 'sonner';
 
 export default function ClientDetailSheet({ client, onClose }: { client: any; onClose: () => void }) {
+  const qc = useQueryClient();
+
   const { data: cmds = [] } = useQuery({
     queryKey: ['client-commandes', client.id],
     queryFn: () => commandeService.listAdmin({ clientId: client.id }),
+  });
+
+  const activateMut = useMutation({
+    mutationFn: (id: number) => userService.activate(id),
+    onSuccess: () => {
+      toast.success('Client activé — un email de bienvenue a été envoyé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de l\'activation'),
+  });
+
+  const deactivateMut = useMutation({
+    mutationFn: (id: number) => userService.deactivate(id),
+    onSuccess: () => {
+      toast.success('Client désactivé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de la désactivation'),
   });
 
   return (
