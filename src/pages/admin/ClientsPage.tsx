@@ -15,6 +15,8 @@ import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateV
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const qc = useQueryClient();
 
   const { data: users = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-users'],
