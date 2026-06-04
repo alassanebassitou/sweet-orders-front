@@ -93,7 +93,7 @@ export default function ClientsPage() {
        filtered.length === 0 ? <EmptyState message="Aucun client trouvé" icon={Users} /> : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c: any) => (
-            <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedClientId(c.id)}>
+            <Card key={c.id} className={cn('shadow-sm hover:shadow-md transition-shadow cursor-pointer', !(c.actif || c.isActif) && 'opacity-60 grayscale-[30%]')} onClick={() => setSelectedClientId(c.id)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -109,11 +109,16 @@ export default function ClientsPage() {
                       )}
                     </div>
                   </div>
-                  {(c.estVip || c.isVIP) && (
-                    <Badge className="bg-warning/15 text-warning text-[10px] gap-1">
-                      <Star className="w-3 h-3" /> VIP
-                    </Badge>
-                  )}
+                  <div className="flex flex-col items-end gap-1">
+                    {(c.estVip || c.isVIP) && (
+                      <Badge className="bg-warning/15 text-warning text-[10px] gap-1">
+                        <Star className="w-3 h-3" /> VIP
+                      </Badge>
+                    )}
+                    {!(c.actif || c.isActif) && (
+                      <Badge className="bg-destructive/10 text-destructive text-[10px]">Inactif</Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   {c.telephone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.telephone}</div>}
@@ -122,6 +127,20 @@ export default function ClientsPage() {
                 <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs">
                   <span className="text-muted-foreground">Total dépensé</span>
                   <span className="font-semibold">{formatFCFA(c.totalExpenses ?? 0)}</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={(e) => { e.stopPropagation(); setSelectedClientId(c.id); }}>
+                    <Eye className="w-3 h-3" /> Voir fiche
+                  </Button>
+                  {c.actif || c.isActif ? (
+                    <Button size="sm" variant="outline" className="text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={(e) => { e.stopPropagation(); if (confirm(`Désactiver le compte de ${c.firstname} ${c.lastname} ?`)) { deactivateMut.mutate(c.id); } }} disabled={deactivateMut.isPending}>
+                      <UserX className="w-3 h-3" /> Désactiver
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="text-xs gap-1 text-success border-success/30 hover:bg-success/5" onClick={(e) => { e.stopPropagation(); activateMut.mutate(c.id); }} disabled={activateMut.isPending}>
+                      <UserCheck className="w-3 h-3" /> Activer
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
