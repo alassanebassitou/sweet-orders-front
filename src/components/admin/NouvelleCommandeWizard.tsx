@@ -47,8 +47,6 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     lastname: '', firstname: '', phone: '', email: '', address: '', city: '',
   });
 
-  console.log("New client: ", newClient);
-
   // Step 2 — Produits
   const [lignes, setLignes] = useState<LigneProduit[]>([]);
 
@@ -150,7 +148,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     return true;
   };
 
-  // ✅ Clear address when switching mode
+  // Clear address when switching mode
 const handleModeChange = (newMode: 'HOME_DELIVERY' | 'COLLECTION_ON_SITE') => {
   setMode(newMode);
   // Clear address when switching to pickup — prevents stale value blocking the button

@@ -29,10 +29,6 @@ export default function ClientCatalogue() {
       || p.category === cat
     );
 
-    console.log("Products: ", products);
-    console.log("Categories: ", categories);
-    console.log("Filtered: ", filtered);
-
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
       <div>

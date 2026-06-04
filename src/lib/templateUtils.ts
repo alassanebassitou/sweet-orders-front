@@ -104,7 +104,7 @@ export const sendOrderWhatsApp = (
   }
   const variables = buildOrderVariables(commande, patisserie);
   const message = interpolateTemplate(template.contenu || template.content || '', variables);
-  const phone = commande.clientTelephone || commande.phone || '';
+  const phone = commande.clientPhone || commande.phone || '';
   if (!phone) {
     toastError('Numéro de téléphone client introuvable');
     return;

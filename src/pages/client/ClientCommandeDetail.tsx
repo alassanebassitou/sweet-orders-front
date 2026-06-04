@@ -114,7 +114,7 @@ export default function ClientCommandeDetail() {
         return (
           <Card className="bg-success/10 border-success/30">
             <CardContent className="p-4 space-y-3 text-sm">
-              <p className="text-success">✅ Commande livrée. Merci pour votre confiance !</p>
+              <p className="text-success"> Commande livrée. Merci pour votre confiance !</p>
               {remaining.length > 0 ? (
                 <>
                   <p className="text-muted-foreground text-xs">Votre avis nous aide à nous améliorer.</p>
@@ -189,7 +189,7 @@ export default function ClientCommandeDetail() {
         Répéter cette commande
       </Button>
 
-      {/* ── ✅ Duplicate dialog ── */}
+      {/* ── Duplicate dialog ── */}
       <Dialog
         open={showDuplicateDialog}
         onOpenChange={setShowDuplicateDialog}>
@@ -203,10 +203,11 @@ export default function ClientCommandeDetail() {
           </DialogHeader>
 
           <div className="py-4">
-            <label className="text-sm font-medium">
+            <label htmlFor="duplicate-date" className="text-sm font-medium">
               Date de livraison souhaitée
             </label>
             <Input
+              id="duplicate-date"
               type="date"
               value={duplicateDate}
               min={new Date(Date.now() + 86400000)
@@ -232,7 +233,7 @@ export default function ClientCommandeDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
+      
       <SubmitReviewModal
         open={reviewOpen}
         onClose={() => setReviewOpen(false)}

@@ -12,23 +12,23 @@ import { LoadingState, ErrorState } from '@/components/common/StateViews';
 import { cn } from '@/lib/utils';
 
 const tabs = [
-  { value: 'TOUTES', label: 'Toutes' },
-  { value: 'EN_COURS', label: 'En cours' },
-  { value: 'LIVREE', label: 'Livrées' },
-  { value: 'ANNULEE', label: 'Annulées' },
+  { value: 'ALL', label: 'Toutes' },
+  { value: 'IN_PRODUCTION', label: 'En cours' },
+  { value: 'DELIVERED', label: 'Livrées' },
+  { value: 'CANCELLED', label: 'Annulées' },
 ];
 
 export default function ClientMesCommandes() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState('TOUTES');
+  const [tab, setTab] = useState('ALL');
   const { data: commandes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['mes-commandes'],
     queryFn: commandeService.mesCommandes,
   });
 
   const filtered = (commandes as any[]).filter((c) => {
-    if (tab === 'TOUTES') return true;
-    if (tab === 'EN_COURS') return !['DELIVERY', 'CANCELLED'].includes(c.status);
+    if (tab === 'ALL') return true;
+    if (tab === 'IN_PRODUCTION') return !['DELIVERED', 'CANCELLED'].includes(c.status);
     return c.status === tab;
   });
 

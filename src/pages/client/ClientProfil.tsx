@@ -113,7 +113,7 @@ export default function ClientProfil() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{a.productName || a.produitName || `Produit #${a.productId}`}</p>
+                    <p className="font-medium text-sm">{a.productName || `Produit #${a.productId}`}</p>
                     <div className="flex items-center gap-2">
                       <StarRating value={a.note || 0} size="sm" />
                       <span className="text-xs text-muted-foreground">{relativeTime(a.createdAt)}</span>

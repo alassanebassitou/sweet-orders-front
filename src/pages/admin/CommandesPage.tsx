@@ -132,6 +132,7 @@ export default function CommandesPage() {
                       variant="outline"
                       onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(c); }}
                       className="gap-1 text-success border-success/40 hover:bg-success/10"
+                      disabled={!c.clientPhone}
                     >
                       <MessageCircle className="w-3.5 h-3.5" />
                       {getWhatsAppButtonLabel(c.status)}
