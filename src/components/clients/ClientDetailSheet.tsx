@@ -1,15 +1,36 @@
-import { X, Phone, Mail, MapPin, Star, MessageCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { X, Phone, Mail, MapPin, Star, MessageCircle, UserCheck, UserX } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { commandeService } from '@/lib/services';
+import { commandeService, userService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
+import { toast } from 'sonner';
 
 export default function ClientDetailSheet({ client, onClose }: { client: any; onClose: () => void }) {
+  const qc = useQueryClient();
+
   const { data: cmds = [] } = useQuery({
     queryKey: ['client-commandes', client.id],
     queryFn: () => commandeService.listAdmin({ clientId: client.id }),
+  });
+
+  const activateMut = useMutation({
+    mutationFn: (id: number) => userService.activate(id),
+    onSuccess: () => {
+      toast.success('Client activé — un email de bienvenue a été envoyé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de l\'activation'),
+  });
+
+  const deactivateMut = useMutation({
+    mutationFn: (id: number) => userService.deactivate(id),
+    onSuccess: () => {
+      toast.success('Client désactivé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de la désactivation'),
   });
 
   return (
@@ -27,6 +48,22 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
             </div>
             <h3 className="font-display text-xl font-bold">{client.firstname} {client.lastname}</h3>
             {(client.estVip || client.isVIP) && <Badge className="bg-warning/15 text-warning gap-1 mt-2"><Star className="w-3 h-3" /> VIP</Badge>}
+          </div>
+          <div className="flex gap-2 justify-center mt-3">
+            {client.actif || client.isActif ? (
+              <Button size="sm" variant="outline" className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => { if (confirm(`Désactiver le compte de ${client.firstname} ${client.lastname} ?`)) { deactivateMut.mutate(client.id); } }} disabled={deactivateMut.isPending}>
+                <UserX className="w-4 h-4" /> Désactiver ce compte
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" className="gap-1 text-success border-success/30 hover:bg-success/5" onClick={() => activateMut.mutate(client.id)} disabled={activateMut.isPending}>
+                <UserCheck className="w-4 h-4" /> Activer ce compte
+              </Button>
+            )}
+            {client.telephone && (
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => window.open(`https://wa.me/${client.telephone.replace('+', '')}`, '_blank')}>
+                <MessageCircle className="w-4 h-4" /> WhatsApp
+              </Button>
+            )}
           </div>
           <div className="space-y-2 text-sm">
             {client.telephone && <a href={`tel:${client.telephone}`} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary"><Phone className="w-4 h-4 text-primary" />{client.telephone}</a>}
@@ -65,11 +102,6 @@ export default function ClientDetailSheet({ client, onClose }: { client: any; on
               </div>
             ) : <p className="text-sm text-muted-foreground text-center py-4">Aucune commande</p>}
           </div>
-          {client.telephone && (
-            <Button className="w-full gap-2" onClick={() => window.open(`https://wa.me/${client.telephone.replace('+', '')}`, '_blank')}>
-              <MessageCircle className="w-4 h-4" /> Contacter sur WhatsApp
-            </Button>
-          )}
         </div>
       </div>
     </div>

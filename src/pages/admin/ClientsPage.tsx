@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { Search, Plus, Users, Phone, MapPin, Star } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Search, Plus, Users, Phone, MapPin, Star, Eye, UserCheck, UserX } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { userService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 // Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const qc = useQueryClient();
 
   const { data: users = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-users'],
@@ -20,9 +24,30 @@ export default function ClientsPage() {
   });
 
   const clients = users.filter((u: any) => u.role === 'ROLE_CLIENT');
-  const filtered = clients.filter((c: any) =>
-    [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = clients.filter((c: any) => {
+    const matchSearch = [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
+    const isActive = c.actif || c.isActif;
+    const matchActive = activeFilter === 'all' ? true : activeFilter === 'active' ? isActive : !isActive;
+    return matchSearch && matchActive;
+  });
+
+  const activateMut = useMutation({
+    mutationFn: (id: number) => userService.activate(id),
+    onSuccess: () => {
+      toast.success('Client activé — un email de bienvenue a été envoyé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de l\'activation'),
+  });
+
+  const deactivateMut = useMutation({
+    mutationFn: (id: number) => userService.deactivate(id),
+    onSuccess: () => {
+      toast.success('Client désactivé');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => toast.error('Erreur lors de la désactivation'),
+  });
   const selected = clients.find((c: any) => c.id === selectedClientId);
 
   console.log("clients", clients);
@@ -43,12 +68,32 @@ export default function ClientsPage() {
         <Input placeholder="Rechercher par nom, téléphone ou ville..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      <div className="flex gap-2">
+        {[
+          { value: 'all', label: 'Tous' },
+          { value: 'active', label: 'Actifs' },
+          { value: 'inactive', label: 'Inactifs' },
+        ].map(f => (
+          <button
+            key={f.value}
+            onClick={() => setActiveFilter(f.value as any)}
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+              activeFilter === f.value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            )}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? <LoadingState /> :
        isError ? <ErrorState message="Impossible de charger les clients" onRetry={refetch} /> :
        filtered.length === 0 ? <EmptyState message="Aucun client trouvé" icon={Users} /> : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c: any) => (
-            <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedClientId(c.id)}>
+            <Card key={c.id} className={cn('shadow-sm hover:shadow-md transition-shadow cursor-pointer', !(c.actif || c.isActif) && 'opacity-60 grayscale-[30%]')} onClick={() => setSelectedClientId(c.id)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -64,11 +109,16 @@ export default function ClientsPage() {
                       )}
                     </div>
                   </div>
-                  {(c.estVip || c.isVIP) && (
-                    <Badge className="bg-warning/15 text-warning text-[10px] gap-1">
-                      <Star className="w-3 h-3" /> VIP
-                    </Badge>
-                  )}
+                  <div className="flex flex-col items-end gap-1">
+                    {(c.estVip || c.isVIP) && (
+                      <Badge className="bg-warning/15 text-warning text-[10px] gap-1">
+                        <Star className="w-3 h-3" /> VIP
+                      </Badge>
+                    )}
+                    {!(c.actif || c.isActif) && (
+                      <Badge className="bg-destructive/10 text-destructive text-[10px]">Inactif</Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   {c.telephone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.telephone}</div>}
@@ -77,6 +127,20 @@ export default function ClientsPage() {
                 <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs">
                   <span className="text-muted-foreground">Total dépensé</span>
                   <span className="font-semibold">{formatFCFA(c.totalExpenses ?? 0)}</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={(e) => { e.stopPropagation(); setSelectedClientId(c.id); }}>
+                    <Eye className="w-3 h-3" /> Voir fiche
+                  </Button>
+                  {c.actif || c.isActif ? (
+                    <Button size="sm" variant="outline" className="text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/5" onClick={(e) => { e.stopPropagation(); if (confirm(`Désactiver le compte de ${c.firstname} ${c.lastname} ?`)) { deactivateMut.mutate(c.id); } }} disabled={deactivateMut.isPending}>
+                      <UserX className="w-3 h-3" /> Désactiver
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="text-xs gap-1 text-success border-success/30 hover:bg-success/5" onClick={(e) => { e.stopPropagation(); activateMut.mutate(c.id); }} disabled={activateMut.isPending}>
+                      <UserCheck className="w-3 h-3" /> Activer
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
