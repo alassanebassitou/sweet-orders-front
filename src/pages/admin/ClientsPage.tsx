@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Search, Plus, Users, Phone, MapPin, Star } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Search, Plus, Users, Phone, MapPin, Star, Eye, UserCheck, UserX } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { userService } from '@/lib/services';
 import { formatFCFA } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 // Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)

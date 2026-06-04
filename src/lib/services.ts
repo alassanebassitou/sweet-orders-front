@@ -17,6 +17,7 @@ export const userService = {
     api.put(`/admin/users/${id}`, payload).then(r => r.data),
   create: (payload: any) => api.post('/admin/users', payload).then(r => r.data),
   deactivate: (id: string | number) => api.delete(`/admin/users/${id}`).then(r => r.data),
+  activate: (id: number) => api.patch(`/admin/users/${id}/activate`).then(r => r.data),
 };
 
 // ---- Products
