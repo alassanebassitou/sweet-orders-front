@@ -63,18 +63,32 @@ export function AdminReviewRow({ avis }: { avis: any }) {
         </div>
         <div className="flex gap-2 flex-wrap">
           {hidden ? (
-            <Button size="sm" variant="outline" onClick={() => restoreMut.mutate()} disabled={restoreMut.isPending} className="gap-1.5">
+            <Button
+              size="sm"
+              onClick={() => restoreMut.mutate()}
+              disabled={restoreMut.isPending}
+              className="gap-1.5 bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+            >
               <RotateCcw className="w-3.5 h-3.5" /> Restaurer
             </Button>
           ) : (
             <>
               <Badge variant="outline" className="gap-1"><Eye className="w-3 h-3" /> Visible</Badge>
-              <Button size="sm" variant="outline" onClick={() => hideMut.mutate()} disabled={hideMut.isPending} className="gap-1.5">
+              <Button
+                size="sm"
+                onClick={() => hideMut.mutate()}
+                disabled={hideMut.isPending}
+                className="gap-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300"
+              >
                 <EyeOff className="w-3.5 h-3.5" /> Masquer
               </Button>
             </>
           )}
-          <Button size="sm" variant="outline" onClick={() => setConfirmOpen(true)} className="gap-1.5 text-destructive hover:text-destructive">
+          <Button
+            size="sm"
+            onClick={() => setConfirmOpen(true)}
+            className="gap-1.5 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+          >
             <Trash2 className="w-3.5 h-3.5" /> Supprimer
           </Button>
         </div>
