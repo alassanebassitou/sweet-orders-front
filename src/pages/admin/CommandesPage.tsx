@@ -61,8 +61,8 @@ export default function CommandesPage() {
   };
 
   const filtered = useMemo(() => commandes.filter((c: any) =>
-    (c.clientName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.numero || '').toLowerCase().includes(search.toLowerCase())
+    (c.clientName || '').toLowerCase().includes(search.toLowerCase()) 
+    || (c.numero || '').toLowerCase().includes(search.toLowerCase())
   ), [commandes, search]);
 
   const selected_obj = commandes.find((c: any) => c.id === selectedId) || null;

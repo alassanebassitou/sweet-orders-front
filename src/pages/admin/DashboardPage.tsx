@@ -31,8 +31,6 @@ export default function DashboardPage() {
   );
   const recents = commandes.slice(0, 5);
 
-  console.log("Dashboard data", { dashboard, commandes, livraisons, alertes });
-
   const revenuChart = useMemo(() => {
     if (!dashboard?.revenueByMonth) return [];
     return dashboard.revenueByMonth.map((r: any) => ({

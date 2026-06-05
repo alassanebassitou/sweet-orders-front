@@ -42,7 +42,6 @@ export default function FinancesPage() {
   });
 
   const dashboard = dashQ.data;
-  console.log('Dashboard data:', dashboard);
   const allDepenses = depQ.data || [];
   const depenses = allDepenses.filter((d: any) => {
     if (linkFilter === 'LIEES') return !!d.commandeId;

@@ -43,7 +43,11 @@ export default function AdminLayout() {
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-            <CakeSlice className="w-5 h-5 text-primary-foreground" />
+            <img
+              src="/favicon.ico"
+              alt="Sweet Orders"
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <h1 className="font-display text-lg font-semibold text-foreground leading-tight">Ma Pâtisserie</h1>
@@ -97,7 +101,11 @@ export default function AdminLayout() {
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <div className="flex items-center gap-2">
-                <CakeSlice className="w-5 h-5 text-primary" />
+                <img
+                  src="/favicon.ico"
+                  alt="Sweet Orders"
+                  className="w-8 h-8 object-contain"
+                />
                 <span className="font-display font-semibold">Ma Pâtisserie</span>
               </div>
               <button onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>

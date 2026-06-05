@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 export function AdminReviewRow({ avis }: { avis: any }) {
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const hidden = avis.hidden ?? avis.cache ?? avis.isHidden ?? false;
+  const hidden = !avis.isVisible;
   const initial = (avis.clientName || '?').trim().charAt(0).toUpperCase();
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-avis'] });
@@ -51,7 +51,7 @@ export function AdminReviewRow({ avis }: { avis: any }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-sm">{shortenName(avis.clientName)}</span>
-              <span className="text-xs text-muted-foreground">— {avis.productName || avis.produitName || `Produit #${avis.productId}`}</span>
+              <span className="text-xs text-muted-foreground">— {avis.productName || `Produit #${avis.productId}`}</span>
               {hidden && <Badge variant="secondary" className="text-[10px]">MASQUÉ</Badge>}
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -73,7 +73,9 @@ export function AdminReviewRow({ avis }: { avis: any }) {
             </Button>
           ) : (
             <>
-              <Badge variant="outline" className="gap-1"><Eye className="w-3 h-3" /> Visible</Badge>
+              <Badge variant="outline" className="gap-1 text-green-700 border-green-300 bg-green-50">
+                <Eye className="w-3 h-3" /> Visible
+              </Badge>
               <Button
                 size="sm"
                 onClick={() => hideMut.mutate()}

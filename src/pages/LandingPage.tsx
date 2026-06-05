@@ -39,7 +39,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-              <CakeSlice className="w-5 h-5 text-primary-foreground" />
+              <img
+                src="/favicon.ico"
+                alt="Sweet Orders"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <span className="font-display text-lg font-semibold">Sweet Orders</span>
           </div>

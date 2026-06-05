@@ -95,16 +95,16 @@ export const sendOrderWhatsApp = (
   toastError: (msg: string) => void,
   patisserie?: { nom?: string; telephone?: string }
 ): void => {
-  const status = commande.status || commande.statut;
+  const status = commande.status || '';
   const templateType = getTemplateType(status);
-  const template = templates.find((t: any) => t.type === templateType || t.code === templateType);
+  const template = templates.find((t: any) => t.type === templateType);
   if (!template) {
     toastError('Template introuvable');
     return;
   }
   const variables = buildOrderVariables(commande, patisserie);
-  const message = interpolateTemplate(template.contenu || template.content || '', variables);
-  const phone = commande.clientPhone || commande.phone || '';
+  const message = interpolateTemplate(template.content || '', variables);
+  const phone = commande.clientPhone || '';
   if (!phone) {
     toastError('Numéro de téléphone client introuvable');
     return;
