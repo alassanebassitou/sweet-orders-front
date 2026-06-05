@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus, MessageCircle } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
 import NouvelleCommandeWizard from '@/components/admin/NouvelleCommandeWizard';
@@ -20,6 +21,7 @@ export default function CommandesPage() {
   const [statutFilter, setStatutFilter] = useState('ALL');
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [selected, setSelected] = useState<Array<string | number>>([]);
   const qc = useQueryClient();
 
   const { data: commandes = [], isLoading, isError, refetch } = useQuery({
@@ -44,6 +46,16 @@ export default function CommandesPage() {
     telephone: (settings as any)?.whatsappPhoneNumber,
   };
 
+  const bulkDeleteMut = useMutation({
+    mutationFn: (ids: Array<string | number>) => commandeService.bulkDeleteCommandes(ids),
+    onSuccess: () => {
+      toast.success(`${selected.length} commande(s) supprimée(s)`);
+      setSelected([]);
+      qc.invalidateQueries({ queryKey: ['commandes'] });
+    },
+    onError: () => toast.error('Erreur lors de la suppression'),
+  });
+
   const handleSendWhatsApp = (commande: any) => {
     sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
   };
@@ -53,10 +65,15 @@ export default function CommandesPage() {
     (c.numero || '').toLowerCase().includes(search.toLowerCase())
   ), [commandes, search]);
 
-  const selected = commandes.find((c: any) => c.id === selectedId) || null;
+  const selected_obj = commandes.find((c: any) => c.id === selectedId) || null;
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['commandes'] });
+  };
+
+  const toggleSelect = (id: string | number, checked: boolean) => {
+    if (checked) setSelected((s) => [...s, id]);
+    else setSelected((s) => s.filter((x) => x !== id));
   };
 
   return (
@@ -91,6 +108,30 @@ export default function CommandesPage() {
         </Select>
       </div>
 
+      {selected.length > 0 && (
+        <div className="sticky top-0 z-20 flex items-center gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex-wrap">
+          <span className="text-sm font-medium">
+            {selected.length} commande(s) sélectionnée(s)
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={bulkDeleteMut.isPending}
+            onClick={() => {
+              if (confirm(`Supprimer ${selected.length} commande(s) ?`)) {
+                bulkDeleteMut.mutate(selected);
+              }
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Supprimer la sélection
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
+            Annuler
+          </Button>
+        </div>
+      )}
+
       {isLoading ? <LoadingState /> :
        isError ? <ErrorState message="Impossible de charger les commandes" onRetry={refetch} /> :
        filtered.length === 0 ? <EmptyState message="Aucune commande trouvée" icon={ShoppingBag} /> : (
@@ -98,11 +139,18 @@ export default function CommandesPage() {
           {filtered.map((c: any) => {
             const st = statutColors[c.status];
             const reste = (c.totalAmount || 0) - (c.totalPaye ?? c.paye ?? 0);
+            const isSelected = selected.includes(c.id);
             return (
               <Card key={c.id} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedId(c.id)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
+                      <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => toggleSelect(c.id, !!checked)}
+                        />
+                      </div>
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <ShoppingBag className="w-5 h-5 text-primary" />
                       </div>
@@ -145,9 +193,9 @@ export default function CommandesPage() {
         </div>
       )}
 
-      {selected && (
+      {selected_obj && (
         <CommandeDetailSheet
-          commande={selected}
+          commande={selected_obj}
           onClose={() => setSelectedId(null)}
           onUpdated={refresh}
         />

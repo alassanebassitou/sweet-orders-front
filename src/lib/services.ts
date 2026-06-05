@@ -71,6 +71,10 @@ export const commandeService = {
   api.post(`/commandes/${id}/duplicate`, {
     wishDeliveryDate
   }).then(r => r.data),
+  deleteCommande: (id: string | number) =>
+    api.delete(`/admin/commandes/${id}`).then(r => r.data),
+  bulkDeleteCommandes: (ids: Array<string | number>) =>
+    api.delete('/admin/commandes/bulk', { data: { ids } }).then(r => r.data),
 };
 
 // ---- Paiements

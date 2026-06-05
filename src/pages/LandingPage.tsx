@@ -1,10 +1,12 @@
 import { CakeSlice, Truck, Sparkles, Phone, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockProduits } from '@/lib/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatFCFA } from '@/lib/format';
 import { useAuthStore } from '@/stores/authStore';
+import api from '@/lib/api';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -14,6 +16,21 @@ export default function LandingPage() {
     if (isAuthenticated && user?.role === 'ROLE_CLIENT') navigate('/app/catalogue');
     else navigate('/login');
   };
+
+  const goProduct = (id: any) => {
+    if (isAuthenticated && user?.role === 'ROLE_CLIENT') navigate(`/app/catalogue/${id}`);
+    else navigate('/login');
+  };
+
+  const { data: produits = [], isLoading } = useQuery({
+    queryKey: ['produits-public'],
+    queryFn: () => api.get('/produits').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const featured = (produits as any[])
+    .filter((p: any) => p.estActif ?? p.isActif ?? p.actif ?? true)
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,7 +43,10 @@ export default function LandingPage() {
             </div>
             <span className="font-display text-lg font-semibold">Sweet Orders</span>
           </div>
-          <Button variant="outline" onClick={() => navigate('/login')}>Se connecter</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate('/contact')}>Contact</Button>
+            <Button variant="outline" onClick={() => navigate('/login')}>Se connecter</Button>
+          </div>
         </div>
       </header>
 
@@ -75,29 +95,48 @@ export default function LandingPage() {
 
       {/* Featured products */}
       <section className="max-w-6xl mx-auto px-4 py-12">
-        <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 text-center">Nos best-sellers</h2>
+        <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 text-center">Nos créations</h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {mockProduits.slice(0, 3).map((p) => (
-            <Card key={p.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <CakeSlice className="w-16 h-16 text-primary/60" />
-              </div>
-              <CardContent className="p-4">
-                <h3 className="font-display font-semibold">{p.nom}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">{formatFCFA(p.prixBase)}</span>
-                  <Button size="sm" onClick={goCatalogue}>Commander</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden shadow-sm">
+                  <Skeleton className="aspect-[4/3] w-full" />
+                  <CardContent className="p-4 space-y-2">
+                    <Skeleton className="h-5 w-2/3" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-9 w-full" />
+                  </CardContent>
+                </Card>
+              ))
+            : featured.map((p: any) => {
+                const nom = p.nom || p.name;
+                const prix = p.prixBase ?? p.basePrice ?? 0;
+                const photo = p.photoUrl || p.photo;
+                return (
+                  <Card key={p.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div
+                      className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center bg-cover bg-center"
+                      style={photo ? { backgroundImage: `url(${photo})` } : undefined}
+                    >
+                      {!photo && <CakeSlice className="w-16 h-16 text-primary/60" />}
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-display font-semibold">{nom}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{formatFCFA(prix)}</span>
+                        <Button size="sm" onClick={() => goProduct(p.id)}>Commander</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-border bg-card mt-12">
-        <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-3 gap-6 text-sm">
+        <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-4 gap-6 text-sm">
           <div className="flex items-center gap-2">
             <CakeSlice className="w-5 h-5 text-primary" />
             <span className="font-display font-semibold">Sweet Orders</span>
@@ -108,6 +147,12 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="w-4 h-4" /> Cotonou, Bénin
           </div>
+          <button
+            onClick={() => navigate('/contact')}
+            className="text-left text-muted-foreground hover:text-primary"
+          >
+            Contact
+          </button>
         </div>
       </footer>
     </div>

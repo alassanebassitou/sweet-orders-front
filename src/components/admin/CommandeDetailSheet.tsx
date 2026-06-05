@@ -127,6 +127,17 @@ export default function CommandeDetailSheet({
     onError: () => toast.error("Erreur lors de l'enregistrement"),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: () => commandeService.deleteCommande(commande.id),
+    onSuccess: () => {
+      toast.success('Commande supprimée');
+      qc.invalidateQueries({ queryKey: ['commandes'] });
+      onUpdated?.();
+      onClose();
+    },
+    onError: () => toast.error('Erreur lors de la suppression'),
+  });
+
   const change = (s: string) => statutMutation.mutate(s);
 
   return (
@@ -510,6 +521,25 @@ export default function CommandeDetailSheet({
                   Annuler la commande
                 </Button>
               )}
+
+            {/* Delete — only for CANCELLED or DRAFT */}
+            {(commande.status === 'CANCELLED' ||
+              commande.status === 'DRAFT' ||
+              commande.statut === 'CANCELLED' ||
+              commande.statut === 'DRAFT') && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (confirm('Supprimer définitivement cette commande ?')) {
+                    deleteMut.mutate();
+                  }
+                }}
+                disabled={deleteMut.isPending}
+                className="w-full text-destructive hover:bg-destructive/5 gap-2 border border-destructive/20"
+              >
+                <Trash2 className="w-4 h-4" /> Supprimer la commande
+              </Button>
+            )}
           </div>
         </div>
       </div>
