@@ -94,6 +94,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             <Route path="/admin" element={<RoleRoute role="ROLE_ADMIN"><AdminLayout /></RoleRoute>}>
