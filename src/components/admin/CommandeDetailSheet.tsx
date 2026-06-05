@@ -127,6 +127,17 @@ export default function CommandeDetailSheet({
     onError: () => toast.error("Erreur lors de l'enregistrement"),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: () => commandeService.deleteCommande(commande.id),
+    onSuccess: () => {
+      toast.success('Commande supprimée');
+      qc.invalidateQueries({ queryKey: ['commandes'] });
+      onUpdated?.();
+      onClose();
+    },
+    onError: () => toast.error('Erreur lors de la suppression'),
+  });
+
   const change = (s: string) => statutMutation.mutate(s);
 
   return (
