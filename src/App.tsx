@@ -13,6 +13,7 @@ import ClientLayout from "@/components/layout/ClientLayout";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
+import ContactPage from "@/pages/ContactPage";
 
 import DashboardPage from "@/pages/admin/DashboardPage";
 import CommandesPage from "@/pages/admin/CommandesPage";
