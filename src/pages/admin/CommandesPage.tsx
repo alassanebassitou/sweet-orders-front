@@ -77,10 +77,20 @@ export default function CommandesPage() {
     sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
   };
 
-  const filtered = useMemo(() => commandes.filter((c: any) =>
-    (c.clientName || '').toLowerCase().includes(search.toLowerCase()) 
-    || (c.numero || '').toLowerCase().includes(search.toLowerCase())
-  ), [commandes, search]);
+  const filtered = useMemo(() => commandes
+    .filter((c: any) =>
+      (c.clientName || '').toLowerCase().includes(search.toLowerCase())
+      || (c.numero || '').toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((c: any) => {
+      const total = c.totalAmount || c.montantTotal || 0;
+      const paid = c.totalPaye ?? c.paye ?? 0;
+      const solde = c.soldeRestant ?? (total - paid);
+      if (paymentFilter === 'unpaid') return paid === 0;
+      if (paymentFilter === 'paid') return solde <= 0 && paid > 0;
+      if (paymentFilter === 'partial') return paid > 0 && solde > 0;
+      return true;
+    }), [commandes, search, paymentFilter]);
 
   const selected_obj = commandes.find((c: any) => c.id === selectedId) || null;
 
