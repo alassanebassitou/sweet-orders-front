@@ -67,8 +67,11 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" onClick={goCatalogue}>Voir le catalogue</Button>
+              <Button size="lg" variant="secondary" onClick={() => navigate('/signup')}>
+                Créer un compte
+              </Button>
               <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
-                Se connecter avec Google
+                Se connecter
               </Button>
             </div>
           </div>

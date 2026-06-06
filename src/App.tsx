@@ -12,6 +12,8 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import ClientLayout from "@/components/layout/ClientLayout";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
+import SignUpPage from "@/pages/SignUpPage";
+import VerifyCodePage from "@/pages/VerifyCodePage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import ContactPage from "@/pages/ContactPage";
 
@@ -94,6 +96,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/verify" element={<VerifyCodePage />} />
+            <Route path="/signup" element={<SignUpPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 

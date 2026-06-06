@@ -5,6 +5,12 @@ export const authService = {
   google: (idToken: any) => api.post('/auth/google', { idToken }).then(r => r.data),
   logout: () => api.post('/auth/logout').then(r => r.data).catch(() => null),
   me: () => api.get('/auth/me').then(r => r.data),
+  signup: (payload: { lastname: string; firstname: string; birthday: string; phone: string; email: string }) =>
+    api.post('/auth/signup', payload).then(r => r.data),
+  sendCode: (email: string) =>
+    api.post('/auth/email/send-code', { email }).then(r => r.data),
+  verifyCode: (email: string, code: string) =>
+    api.post('/auth/email/verify', { email, code }).then(r => r.data),
 };
 
 // ---- Users / Clients
