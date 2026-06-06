@@ -135,6 +135,23 @@ export default function CommandesPage() {
         </Select>
       </div>
 
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {PAYMENT_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setPaymentFilter(f.value)}
+            className={cn(
+              'px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap transition-colors',
+              paymentFilter === f.value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {selected.length > 0 && (
         <div className="sticky top-0 z-20 flex items-center gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex-wrap">
           <span className="text-sm font-medium">
