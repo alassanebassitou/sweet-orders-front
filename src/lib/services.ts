@@ -81,6 +81,8 @@ export const commandeService = {
     api.delete(`/admin/commandes/${id}`).then(r => r.data),
   bulkDeleteCommandes: (ids: Array<string | number>) =>
     api.delete('/admin/commandes/bulk', { data: { ids } }).then(r => r.data),
+  update: (id: string | number, payload: any) =>
+    api.put(`/commandes/${id}`, payload).then(r => r.data),
 };
 
 // ---- Paiements
