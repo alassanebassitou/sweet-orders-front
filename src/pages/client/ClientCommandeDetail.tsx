@@ -63,6 +63,16 @@ export default function ClientCommandeDetail() {
     toast.error('Erreur lors de la duplication'),
   });
 
+  const editMut = useMutation({
+    mutationFn: (payload: any) => commandeService.update(cmd!.id, payload),
+    onSuccess: () => {
+      toast.success('Commande modifiée');
+      qc.invalidateQueries({ queryKey: ['commande', id] });
+      qc.invalidateQueries({ queryKey: ['mes-commandes'] });
+    },
+    onError: () => toast.error('Impossible de modifier la commande'),
+  });
+
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
   if (isError || !cmd) return <div className="p-6"><ErrorState message="Commande introuvable" onRetry={refetch} /></div>;
 
