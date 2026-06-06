@@ -32,6 +32,9 @@ export default function ClientCommandeDetail() {
   );
 
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [editDate, setEditDate] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editInstructions, setEditInstructions] = useState('');
 
   const { data: cmd, isLoading, isError, refetch } = useQuery({
     queryKey: ['commande', id],
