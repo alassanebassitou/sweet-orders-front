@@ -11,11 +11,13 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
+import { usePresenceStore } from '@/stores/presenceStore';
 // Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const onlineUsers = usePresenceStore((s) => s.onlineUsers);
   const qc = useQueryClient();
 
   const { data: users = [], isLoading, isError, refetch } = useQuery({
@@ -94,8 +96,13 @@ export default function ClientsPage() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                      {(c.firstname?.charAt(0) || '')}{(c.lastname?.charAt(0) || c.name?.charAt(0) || '')}
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                        {(c.firstname?.charAt(0) || '')}{(c.lastname?.charAt(0) || c.name?.charAt(0) || '')}
+                      </div>
+                      {onlineUsers.has(String(c.id)) && (
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-card rounded-full" title="En ligne" />
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold text-sm">{c.firstname} {c.lastname || c.name}</p>

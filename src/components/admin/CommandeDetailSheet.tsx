@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, CheckCircle2, CreditCard } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -168,6 +168,14 @@ export default function CommandeDetailSheet({
         </div>
 
         <div className="p-4 space-y-5">
+
+          {commande.lastModifiedByClient && (
+            <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/30 rounded-lg text-xs text-warning">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Le client a modifié cette commande
+            </div>
+          )}
+
 
           {/* ── Client ── */}
           <section className="space-y-2">

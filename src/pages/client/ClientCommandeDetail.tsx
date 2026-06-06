@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, RotateCw, Star } from 'lucide-react';
+import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,8 @@ import { SubmitReviewModal } from '@/components/client/SubmitReviewModal';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function ClientCommandeDetail() {
@@ -30,6 +32,9 @@ export default function ClientCommandeDetail() {
   );
 
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [editDate, setEditDate] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editInstructions, setEditInstructions] = useState('');
 
   const { data: cmd, isLoading, isError, refetch } = useQuery({
     queryKey: ['commande', id],
@@ -56,6 +61,16 @@ export default function ClientCommandeDetail() {
   },
   onError: () =>
     toast.error('Erreur lors de la duplication'),
+  });
+
+  const editMut = useMutation({
+    mutationFn: (payload: any) => commandeService.update(cmd!.id, payload),
+    onSuccess: () => {
+      toast.success('Commande modifiée');
+      qc.invalidateQueries({ queryKey: ['commande', id] });
+      qc.invalidateQueries({ queryKey: ['mes-commandes'] });
+    },
+    onError: () => toast.error('Impossible de modifier la commande'),
   });
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -180,6 +195,67 @@ export default function ClientCommandeDetail() {
           )}
         </CardContent>
       </Card>
+
+      {(cmd.status === 'PENDING_CONFIRMATION' || cmd.status === 'DRAFT') ? (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <Edit className="w-4 h-4 text-primary" />
+              Modifier la commande
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Vous pouvez modifier votre commande tant qu'elle n'a pas été confirmée par la pâtissière.
+            </p>
+            <div>
+              <Label className="text-xs">Date de livraison</Label>
+              <Input
+                type="date"
+                defaultValue={cmd.wishDeliveryDate}
+                min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                onChange={(e) => setEditDate(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            {cmd.deliveryMode === 'HOME_DELIVERY' && (
+              <div>
+                <Label className="text-xs">Adresse de livraison</Label>
+                <Input
+                  defaultValue={cmd.deliveryAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">Instructions spéciales</Label>
+              <Textarea
+                defaultValue={cmd.deliveryInstruction}
+                onChange={(e) => setEditInstructions(e.target.value)}
+                className="mt-1"
+                rows={2}
+              />
+            </div>
+            <Button
+              onClick={() => editMut.mutate({
+                wishDeliveryDate: editDate || cmd.wishDeliveryDate,
+                deliveryAddress: editAddress || cmd.deliveryAddress,
+                deliveryInstruction: editInstructions || cmd.deliveryInstruction,
+              })}
+              disabled={editMut.isPending}
+              className="w-full gap-2">
+              <Save className="w-4 h-4" />
+              {editMut.isPending ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        cmd.status !== 'DELIVERED' && cmd.status !== 'CANCELLED' && (
+          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+            <Lock className="w-3 h-3" />
+            La commande est confirmée — modifications non disponibles
+          </p>
+        )
+      )}
 
       <Button
         variant="outline"

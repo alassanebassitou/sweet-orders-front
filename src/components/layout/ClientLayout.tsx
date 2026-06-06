@@ -99,7 +99,7 @@ export default function ClientLayout() {
                 </span>
               )}
             </button>
-            <button onClick={() => navigate('/app/profil')} aria-label="Profil" className="ml-1">
+            <button onClick={() => navigate('/app/profil')} aria-label="Profil" className="ml-1 relative">
               {user?.photoUrl ? (
                 <img src={user.photoUrl} alt="" className="w-8 h-8 rounded-full" />
               ) : (
@@ -107,6 +107,7 @@ export default function ClientLayout() {
                   {user?.prenom?.charAt(0) || user?.nom?.charAt(0) || 'C'}
                 </div>
               )}
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-card rounded-full" title="En ligne" />
             </button>
           </div>
         </div>

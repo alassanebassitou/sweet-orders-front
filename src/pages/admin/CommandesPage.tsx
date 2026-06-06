@@ -15,10 +15,28 @@ import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
+import { cn } from '@/lib/utils';
+
+const PAYMENT_FILTERS = [
+  { value: 'all',     label: 'Tous' },
+  { value: 'unpaid',  label: 'Impayé' },
+  { value: 'partial', label: 'Partiellement payé' },
+  { value: 'paid',    label: 'Payé' },
+];
+
+const getPaymentBadge = (c: any) => {
+  const total = c.totalAmount || c.montantTotal || 0;
+  const paid = c.totalPaye ?? c.paye ?? 0;
+  const solde = c.soldeRestant ?? (total - paid);
+  if (paid === 0) return { label: 'Impayé', className: 'bg-destructive/10 text-destructive' };
+  if (solde <= 0) return { label: 'Payé ✓', className: 'bg-success/15 text-success' };
+  return { label: 'Partiel', className: 'bg-warning/15 text-warning' };
+};
 
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selected, setSelected] = useState<Array<string | number>>([]);
@@ -60,10 +78,20 @@ export default function CommandesPage() {
     sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
   };
 
-  const filtered = useMemo(() => commandes.filter((c: any) =>
-    (c.clientName || '').toLowerCase().includes(search.toLowerCase()) 
-    || (c.numero || '').toLowerCase().includes(search.toLowerCase())
-  ), [commandes, search]);
+  const filtered = useMemo(() => commandes
+    .filter((c: any) =>
+      (c.clientName || '').toLowerCase().includes(search.toLowerCase())
+      || (c.numero || '').toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((c: any) => {
+      const total = c.totalAmount || c.montantTotal || 0;
+      const paid = c.totalPaye ?? c.paye ?? 0;
+      const solde = c.soldeRestant ?? (total - paid);
+      if (paymentFilter === 'unpaid') return paid === 0;
+      if (paymentFilter === 'paid') return solde <= 0 && paid > 0;
+      if (paymentFilter === 'partial') return paid > 0 && solde > 0;
+      return true;
+    }), [commandes, search, paymentFilter]);
 
   const selected_obj = commandes.find((c: any) => c.id === selectedId) || null;
 
@@ -106,6 +134,23 @@ export default function CommandesPage() {
             <SelectItem value="CANCELLED">Annulée</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {PAYMENT_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setPaymentFilter(f.value)}
+            className={cn(
+              'px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap transition-colors',
+              paymentFilter === f.value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {selected.length > 0 && (
@@ -158,6 +203,7 @@ export default function CommandesPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm">{c.numero}</span>
                           <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
+                          {(() => { const pb = getPaymentBadge(c); return <Badge variant="secondary" className={`${pb.className} text-[10px]`}>{pb.label}</Badge>; })()}
                           {c.isEmergency && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
                         </div>
                         <p className="text-sm text-foreground mt-0.5">{c.clientName}</p>
