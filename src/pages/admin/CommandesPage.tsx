@@ -16,9 +16,26 @@ import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
 
+const PAYMENT_FILTERS = [
+  { value: 'all',     label: 'Tous' },
+  { value: 'unpaid',  label: 'Impayé' },
+  { value: 'partial', label: 'Partiellement payé' },
+  { value: 'paid',    label: 'Payé' },
+];
+
+const getPaymentBadge = (c: any) => {
+  const total = c.totalAmount || c.montantTotal || 0;
+  const paid = c.totalPaye ?? c.paye ?? 0;
+  const solde = c.soldeRestant ?? (total - paid);
+  if (paid === 0) return { label: 'Impayé', className: 'bg-destructive/10 text-destructive' };
+  if (solde <= 0) return { label: 'Payé ✓', className: 'bg-success/15 text-success' };
+  return { label: 'Partiel', className: 'bg-warning/15 text-warning' };
+};
+
 export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState('ALL');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [selected, setSelected] = useState<Array<string | number>>([]);
