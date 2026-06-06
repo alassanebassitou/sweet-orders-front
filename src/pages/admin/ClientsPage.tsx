@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
+import { usePresenceStore } from '@/stores/presenceStore';
 // Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
