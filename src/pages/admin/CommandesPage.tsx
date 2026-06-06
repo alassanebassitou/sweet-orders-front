@@ -15,6 +15,7 @@ import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
+import { cn } from '@/lib/utils';
 
 const PAYMENT_FILTERS = [
   { value: 'all',     label: 'Tous' },
