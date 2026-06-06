@@ -1,5 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { usePresenceStore } from '@/stores/presenceStore';
 
 let stompClient: Client | null = null;
 
@@ -23,14 +24,48 @@ export const connectWebSocket = (
           try { onNotification(JSON.parse(m.body)); } catch {}
         });
       }
+      // Presence
+      stompClient?.subscribe('/topic/presence', (m) => {
+        try {
+          const { userId, status } = JSON.parse(m.body);
+          if (!userId) return;
+          if (status === 'ONLINE') usePresenceStore.getState().setOnline(userId);
+          else usePresenceStore.getState().setOffline(userId);
+        } catch {}
+      });
+      try {
+        stompClient?.publish({
+          destination: '/app/presence',
+          body: JSON.stringify({ status: 'ONLINE' }),
+        });
+      } catch {}
     },
     onStompError: (frame) => console.error('STOMP error:', frame),
   });
   stompClient.activate();
+
+  // Send offline on unload
+  const handleUnload = () => {
+    try {
+      stompClient?.publish({
+        destination: '/app/presence',
+        body: JSON.stringify({ status: 'OFFLINE' }),
+      });
+    } catch {}
+  };
+  window.addEventListener('beforeunload', handleUnload);
+
   return stompClient;
 };
 
 export const disconnectWebSocket = () => {
+  try {
+    stompClient?.publish({
+      destination: '/app/presence',
+      body: JSON.stringify({ status: 'OFFLINE' }),
+    });
+  } catch {}
   stompClient?.deactivate();
   stompClient = null;
+  usePresenceStore.getState().reset();
 };
