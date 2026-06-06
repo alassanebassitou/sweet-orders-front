@@ -17,6 +17,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const onlineUsers = usePresenceStore((s) => s.onlineUsers);
   const qc = useQueryClient();
 
   const { data: users = [], isLoading, isError, refetch } = useQuery({
