@@ -100,7 +100,7 @@ export default function ClientsPage() {
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                         {(c.firstname?.charAt(0) || '')}{(c.lastname?.charAt(0) || c.name?.charAt(0) || '')}
                       </div>
-                      {usePresenceStore.getState().isOnline(String(c.id)) && (
+                      {onlineUsers.has(String(c.id)) && (
                         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success border-2 border-card rounded-full" title="En ligne" />
                       )}
                     </div>
