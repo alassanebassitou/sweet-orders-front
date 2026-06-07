@@ -494,14 +494,24 @@ export default function CommandeDetailSheet({
               )
             )}
 
-            {/* WhatsApp — template-based message */}
-            <Button
-              variant="outline"
-              onClick={handleSendWhatsApp}
-              className="w-full gap-2 text-success border-success/40 hover:bg-success/10">
-              <MessageCircle className="w-4 h-4" />
-              {getWhatsAppButtonLabel(commande.status || commande.statut)}
-            </Button>
+            {/* WhatsApp — smart template-based message */}
+            {(() => {
+              const action = getWhatsAppAction(
+                commande.status || commande.statut,
+                isVerified,
+                isFullyPaid
+              );
+              return (
+                <Button
+                  variant="outline"
+                  onClick={handleSendWhatsApp}
+                  disabled={verifying}
+                  className={cn('w-full gap-2', buttonColorClass[action.variant])}>
+                  <MessageCircle className="w-4 h-4" />
+                  {action.label}
+                </Button>
+              );
+            })()}
 
             {commande.clientTelephone && (
               <Button
