@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2 } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2, Loader2 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,12 +10,63 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CommandeDetailSheet from '@/components/admin/CommandeDetailSheet';
 import NouvelleCommandeWizard from '@/components/admin/NouvelleCommandeWizard';
-import { commandeService, parametreService } from '@/lib/services';
+import { commandeService, parametreService, paiementService } from '@/lib/services';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA } from '@/lib/format';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
-import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
+import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { cn } from '@/lib/utils';
+
+function WhatsAppButtonAsync({
+  commande,
+  templates,
+  patisserie,
+}: {
+  commande: any;
+  templates: any[];
+  patisserie: { nom?: string; telephone?: string };
+}) {
+  const { data: isVerified = false, isLoading } = useQuery({
+    queryKey: ['payment-verified', commande.id],
+    queryFn: () => paiementService.verifyPayment(commande.id),
+    staleTime: 30 * 1000,
+    enabled: !!commande.id,
+  });
+
+  const total = commande.totalAmount || commande.montantTotal || 0;
+  const paid = commande.totalPaye ?? commande.paye ?? 0;
+  const solde = commande.soldeRestant ?? (total - paid);
+  const isFullyPaid = solde <= 0;
+  const action = getWhatsAppAction(
+    commande.status || commande.statut,
+    isVerified,
+    isFullyPaid
+  );
+
+  if (isLoading) {
+    return (
+      <Button size="sm" variant="outline" disabled className="gap-1 opacity-60">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Vérification...
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className={cn('gap-1', buttonColorClass[action.variant])}
+      disabled={!(commande.clientPhone || commande.clientTelephone)}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleSendWhatsAppFull(commande, templates, patisserie, isVerified, isFullyPaid);
+      }}>
+      <MessageCircle className="w-3.5 h-3.5" />
+      {action.label}
+    </Button>
+  );
+}
 
 const PAYMENT_FILTERS = [
   { value: 'all',     label: 'Tous' },
