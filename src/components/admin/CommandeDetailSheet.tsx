@@ -77,7 +77,7 @@ export default function CommandeDetailSheet({
     telephone: (settings as any)?.whatsappPhoneNumber,
   };
   const handleSendWhatsApp = () => {
-    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
+    handleSendWhatsAppFull(commande, templates as any[], patisserie, isVerified, isFullyPaid);
   };
   const totalDepenses = depenses.reduce(
     (s: number, d: any) => s + (d.amount ?? d.montant ?? 0),
