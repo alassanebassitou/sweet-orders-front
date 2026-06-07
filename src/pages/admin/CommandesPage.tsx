@@ -125,9 +125,6 @@ export default function CommandesPage() {
     onError: () => toast.error('Erreur lors de la suppression'),
   });
 
-  const handleSendWhatsApp = (commande: any) => {
-    sendOrderWhatsApp(commande, templates as any[], toast.error, patisserie);
-  };
 
   const filtered = useMemo(() => commandes
     .filter((c: any) =>
