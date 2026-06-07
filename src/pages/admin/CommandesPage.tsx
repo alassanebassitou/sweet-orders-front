@@ -269,16 +269,7 @@ export default function CommandesPage() {
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex justify-end">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(c); }}
-                      className="gap-1 text-success border-success/40 hover:bg-success/10"
-                      disabled={!c.clientPhone}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      {getWhatsAppButtonLabel(c.status)}
-                    </Button>
+                    <WhatsAppButtonAsync commande={c} templates={templates as any[]} patisserie={patisserie} />
                   </div>
                 </CardContent>
               </Card>
