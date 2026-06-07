@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
 import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
-import { sendOrderWhatsApp, getWhatsAppButtonLabel } from '@/lib/templateUtils';
+import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
