@@ -354,7 +354,121 @@ const handleModeChange = (newMode: 'HOME_DELIVERY' | 'COLLECTION_ON_SITE') => {
               </div>
               {mode === 'HOME_DELIVERY' && (
                 <>
-                  <div><Label>Adresse</Label><Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="mt-1" /></div>
+                  {/* ── Ville ── */}
+                  <div className="space-y-1">
+                    <Label>Ville <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={villeInput}
+                        onChange={(e) => {
+                          setVilleInput(e.target.value); setVille(''); setQuartier(''); setQuartierInput('');
+                          setSelectedZone(null); setFraisLivraison(0); setShowUnknownModal(false); setShowVilleDropdown(true);
+                        }}
+                        onFocus={() => setShowVilleDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowVilleDropdown(false), 150)}
+                        placeholder="Ex: Calavi, Cotonou..."
+                        className="pl-9"
+                      />
+                      {showVilleDropdown && filteredVilles.length > 0 && (
+                        <div className="absolute z-50 w-full top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-52 overflow-y-auto">
+                          {filteredVilles.map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setVille(v); setVilleInput(v); setQuartier(''); setQuartierInput('');
+                                setSelectedZone(null); setFraisLivraison(0); setShowVilleDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-secondary flex items-center gap-2"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />{v}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {ville && (
+                      <p className="text-xs text-success flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> {ville} sélectionnée
+                      </p>
+                    )}
+                  </div>
+
+                  {ville && (
+                    <div className="space-y-1">
+                      <Label>Quartier <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={quartierInput}
+                          onChange={(e) => {
+                            setQuartierInput(e.target.value); setQuartier(''); setSelectedZone(null);
+                            setFraisLivraison(0); setShowUnknownModal(false); setShowQuartierDropdown(true);
+                          }}
+                          onFocus={() => setShowQuartierDropdown(true)}
+                          onBlur={() => setTimeout(() => setShowQuartierDropdown(false), 150)}
+                          placeholder="Ex: Godomey Salamey..."
+                          className="pl-9"
+                        />
+                        {showQuartierDropdown && quartierInput.length > 0 && (
+                          <div className="absolute z-50 w-full top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-52 overflow-y-auto">
+                            {filteredQuartiers.map((z: any) => (
+                              <button
+                                key={z.id}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setQuartier(z.quartier); setQuartierInput(z.quartier); setSelectedZone(z);
+                                  setFraisLivraison(z.fraisLivraison || 0);
+                                  setShowUnknownModal((z.fraisLivraison || 0) === 0);
+                                  setShowQuartierDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-secondary flex items-center justify-between"
+                              >
+                                <span className="font-medium">{z.quartier}</span>
+                                {z.fraisLivraison > 0
+                                  ? <span className="text-xs font-semibold text-primary">+{formatFCFA(z.fraisLivraison)}</span>
+                                  : <span className="text-xs text-amber-600 italic">Frais à définir</span>}
+                              </button>
+                            ))}
+                            {quartierInput.length >= 3 && (
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setQuartier(quartierInput); setSelectedZone(null); setFraisLivraison(0);
+                                  setShowUnknownModal(true); setShowQuartierDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm text-muted-foreground hover:bg-secondary border-t border-border italic"
+                              >
+                                Utiliser "{quartierInput}" →
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {selectedZone && fraisLivraison > 0 && (
+                        <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                          <span className="text-sm flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Frais — {quartier}</span>
+                          <span className="font-bold text-primary text-sm">+{formatFCFA(fraisLivraison)}</span>
+                        </div>
+                      )}
+                      {showUnknownModal && (
+                        <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
+                          <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" /> Quartier non répertorié
+                          </p>
+                          <p className="text-xs text-amber-800 leading-relaxed">
+                            Les frais de livraison ne sont pas encore définis pour ce quartier. Ils pourront être appliqués plus tard depuis la commande.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div><Label>Adresse complète <span className="text-destructive">*</span></Label><Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="mt-1" /></div>
                   <div><Label>Instructions</Label><Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="mt-1" /></div>
                 </>
               )}
