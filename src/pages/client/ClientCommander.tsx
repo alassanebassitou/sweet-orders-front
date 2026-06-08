@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Minus, Plus, Trash2, ShoppingCart, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Minus, Plus, Trash2, ShoppingCart, CheckCircle2, MapPin, Home, Truck, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { commandeService, parametreService } from '@/lib/services';
+import { zoneService } from '@/lib/zoneService';
 import { formatFCFA } from '@/lib/format';
 import { payWithKkiapay } from '@/lib/kkiapay';
 
