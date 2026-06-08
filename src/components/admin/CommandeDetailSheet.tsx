@@ -142,6 +142,31 @@ export default function CommandeDetailSheet({
 
   const change = (s: string) => statutMutation.mutate(s);
 
+  // ── Delivery fee application ──
+  const villeCmd: string | undefined = commande.ville;
+  const { data: allZonesForThisVille = [] } = useQuery({
+    queryKey: ['zones-for-ville', villeCmd],
+    queryFn: () => villeCmd ? zoneService.getQuartiersForVille(villeCmd) : Promise.resolve([]),
+    enabled: !!villeCmd,
+  });
+  const fraisManquants =
+    !!commande.fraisLivraisonNonDefini ||
+    ((commande.deliveryMode === 'HOME_DELIVERY' || commande.modeLivraison === 'HOME_DELIVERY') &&
+      (!commande.fraisLivraison || commande.fraisLivraison === 0));
+  const applyFeeMut = useMutation({
+    mutationFn: ({ commandeId, fraisLivraison }: { commandeId: any; fraisLivraison: number }) =>
+      zoneService.applyFeeToCommande(commandeId, fraisLivraison),
+    onSuccess: () => {
+      toast.success('Frais appliqués — client notifié par email et notification');
+      setDeliveryFeeInput('');
+      qc.invalidateQueries({ queryKey: ['commandes'] });
+      qc.invalidateQueries({ queryKey: ['commande', commande.id] });
+      qc.invalidateQueries({ queryKey: ['payment-verified', commande.id] });
+      onUpdated?.();
+    },
+    onError: () => toast.error("Erreur lors de l'application des frais"),
+  });
+
   return (
     <div className="fixed inset-0 z-50">
       <div
