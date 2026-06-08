@@ -260,6 +260,11 @@ export default function CommandesPage() {
                           <span className="font-semibold text-sm">{c.numero}</span>
                           <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
                           {(() => { const pb = getPaymentBadge(c); return <Badge variant="secondary" className={`${pb.className} text-[10px]`}>{pb.label}</Badge>; })()}
+                          {hasMissingDeliveryFee(c) && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] gap-1">
+                              <Truck className="w-3 h-3" /> Frais livraison non définis
+                            </Badge>
+                          )}
                           {c.isEmergency && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
                         </div>
                         <p className="text-sm text-foreground mt-0.5">{c.clientName}</p>
