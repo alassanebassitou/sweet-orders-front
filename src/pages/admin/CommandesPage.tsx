@@ -73,7 +73,14 @@ const PAYMENT_FILTERS = [
   { value: 'unpaid',  label: 'Impayé' },
   { value: 'partial', label: 'Partiellement payé' },
   { value: 'paid',    label: 'Payé' },
+  { value: 'frais_manquants', label: '🚚 Frais manquants' },
 ];
+
+const hasMissingDeliveryFee = (c: any) =>
+  !!c.fraisLivraisonNonDefini ||
+  ((c.deliveryMode === 'HOME_DELIVERY' || c.modeLivraison === 'HOME_DELIVERY') &&
+    (!c.fraisLivraison || c.fraisLivraison === 0) &&
+    !!(c.deliveryAddress || c.adresseLivraison));
 
 const getPaymentBadge = (c: any) => {
   const total = c.totalAmount || c.montantTotal || 0;
