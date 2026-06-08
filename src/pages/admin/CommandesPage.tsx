@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2, Loader2 } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2, Loader2, Truck } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
