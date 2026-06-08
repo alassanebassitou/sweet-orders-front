@@ -130,12 +130,17 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     setNewClient({ lastname: '', firstname: '', phone: '', email: '', address: '', city: '' });
     setLignes([]);
     setDateLivraison(''); setCreneau('matin'); setMode('HOME_DELIVERY'); setAdresse(''); setInstructions('');
+    setVille(''); setQuartier(''); setVilleInput(''); setQuartierInput('');
+    setSelectedZone(null); setShowUnknownModal(false); setFraisLivraison(0);
     setAcompteRecu('non');
     setPaiement({ amount: 0, paymentMode: 'CASH', paymentDate: new Date().toISOString().split('T')[0], notes: '' });
   };
 
   const submitMut = useMutation({
     mutationFn: async () => {
+      if (mode === 'HOME_DELIVERY' && showUnknownModal && ville && quartier) {
+        try { await zoneService.recordUnknownQuartier(ville, quartier); } catch { /* ignore */ }
+      }
       const payload = {
         clientId: selectedClient.id,
         wishDeliveryDate: dateLivraison,
@@ -143,6 +148,10 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
         deliveryMode: mode,
         deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
         deliveryInstruction: instructions,
+        ville: mode === 'HOME_DELIVERY' ? ville : undefined,
+        quartier: mode === 'HOME_DELIVERY' ? quartier : undefined,
+        fraisLivraison: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
+        fraisLivraisonNonDefini: mode === 'HOME_DELIVERY' && showUnknownModal,
         source: 'MANUALLY',
         productRequests: lignes.map((l) => ({
           productId: l.produitId,
@@ -177,7 +186,13 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const canNext = () => {
     if (step === 0) return !!selectedClient;
     if (step === 1) return lignes.length > 0;
-    if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_ON_SITE' || !!adresse);
+    if (step === 2) {
+      if (!dateLivraison) return false;
+      if (mode === 'HOME_DELIVERY') {
+        if (!ville.trim() || !quartier.trim() || !adresse.trim()) return false;
+      }
+      return true;
+    }
     if (step === 3) return acompteRecu === 'non' || (paiement.amount > 0);
     return true;
   };
