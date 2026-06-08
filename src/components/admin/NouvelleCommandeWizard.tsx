@@ -58,6 +58,39 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const [adresse, setAdresse] = useState('');
   const [instructions, setInstructions] = useState('');
 
+  // ── Delivery zone state ──
+  const [ville, setVille] = useState('');
+  const [quartier, setQuartier] = useState('');
+  const [villeInput, setVilleInput] = useState('');
+  const [quartierInput, setQuartierInput] = useState('');
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [showVilleDropdown, setShowVilleDropdown] = useState(false);
+  const [showQuartierDropdown, setShowQuartierDropdown] = useState(false);
+  const [showUnknownModal, setShowUnknownModal] = useState(false);
+  const [fraisLivraison, setFraisLivraison] = useState(0);
+
+  const { data: allZones = [] } = useQuery({
+    queryKey: ['zones-livraison'],
+    queryFn: () => zoneService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const allVilles = useMemo(
+    () => [...new Set((allZones as any[]).map((z) => z.name as string))].sort(),
+    [allZones],
+  );
+  const filteredVilles = useMemo(
+    () => villeInput.length === 0 ? allVilles : allVilles.filter((v) => v.toLowerCase().startsWith(villeInput.toLowerCase())),
+    [allVilles, villeInput],
+  );
+  const quartiersForVille = useMemo(
+    () => ville ? (allZones as any[]).filter((z) => z.name.toLowerCase() === ville.toLowerCase() && z.actif !== false) : [],
+    [allZones, ville],
+  );
+  const filteredQuartiers = useMemo(
+    () => quartierInput.length === 0 ? quartiersForVille : quartiersForVille.filter((z: any) => z.quartier.toLowerCase().startsWith(quartierInput.toLowerCase())),
+    [quartiersForVille, quartierInput],
+  );
+
   // Step 4 — Paiement
   const [acompteRecu, setAcompteRecu] = useState<'oui' | 'non'>('non');
   const [paiement, setPaiement] = useState({
