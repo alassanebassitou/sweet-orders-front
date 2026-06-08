@@ -35,9 +35,55 @@ export default function ClientCommander() {
   const [instructions, setInstructions] = useState('');
   const [createdCommande, setCreatedCommande] = useState<any>(null);
 
+  // ── Delivery zone state ──
+  const [ville, setVille] = useState('');
+  const [quartier, setQuartier] = useState('');
+  const [villeInput, setVilleInput] = useState('');
+  const [quartierInput, setQuartierInput] = useState('');
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [showVilleDropdown, setShowVilleDropdown] = useState(false);
+  const [showQuartierDropdown, setShowQuartierDropdown] = useState(false);
+  const [showUnknownModal, setShowUnknownModal] = useState(false);
+  const [fraisLivraison, setFraisLivraison] = useState(0);
+
+  const { data: allZones = [] } = useQuery({
+    queryKey: ['zones-livraison'],
+    queryFn: () => zoneService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const allVilles = useMemo(
+    () => [...new Set((allZones as any[]).map((z) => z.name as string))].sort(),
+    [allZones],
+  );
+
+  const filteredVilles = useMemo(
+    () => villeInput.length === 0
+      ? allVilles
+      : allVilles.filter((v) => v.toLowerCase().startsWith(villeInput.toLowerCase())),
+    [allVilles, villeInput],
+  );
+
+  const quartiersForVille = useMemo(
+    () => ville
+      ? (allZones as any[]).filter((z) => z.name.toLowerCase() === ville.toLowerCase() && z.actif !== false)
+      : [],
+    [allZones, ville],
+  );
+
+  const filteredQuartiers = useMemo(
+    () => quartierInput.length === 0
+      ? quartiersForVille
+      : quartiersForVille.filter((z: any) => z.quartier.toLowerCase().startsWith(quartierInput.toLowerCase())),
+    [quartiersForVille, quartierInput],
+  );
+
+  const totalProduits = total;
+  const totalCommande = totalProduits + (mode === 'HOME_DELIVERY' ? fraisLivraison : 0);
+
   const acompteRequis = useMemo(
-    () => Math.round((total * pourcentageAcompte) / 100),
-    [total, pourcentageAcompte]
+    () => Math.round((totalCommande * pourcentageAcompte) / 100),
+    [totalCommande, pourcentageAcompte],
   );
 
   const minDate = (() => {
@@ -48,7 +94,15 @@ export default function ClientCommander() {
 
   const canNext = () => {
     if (step === 0) return items.length > 0;
-    if (step === 1) return !!dateLivraison && (mode === 'COLLECTION_ON_SITE' || !!adresse);
+    if (step === 1) {
+      if (!dateLivraison) return false;
+      if (mode === 'HOME_DELIVERY') {
+        if (!ville.trim()) return false;
+        if (!quartier.trim()) return false;
+        if (!adresse.trim()) return false;
+      }
+      return true;
+    }
     return true;
   };
 
