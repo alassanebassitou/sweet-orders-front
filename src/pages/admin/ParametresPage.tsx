@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Save, MessageCircle, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Save, MessageCircle, ArrowRight, Edit, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,17 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { parametreService } from '@/lib/services';
+import { zoneService, type DeliveryZone } from '@/lib/zoneService';
 import { LoadingState } from '@/components/common/StateViews';
 import { formatFCFA } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 export default function ParametresPage() {
   const qc = useQueryClient();
   const paramsQ = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
-  const zonesQ = useQuery({ queryKey: ['zones'], queryFn: parametreService.zones });
+  const zonesQ = useQuery({ queryKey: ['zones-livraison'], queryFn: () => zoneService.getAll() });
 
   const [params, setParams] = useState<any>({});
-  const [newZone, setNewZone] = useState({ name: '', deliveryFrees: 0 });
+  const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
+  const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
+  const [zoneForm, setZoneForm] = useState<{ name: string; quartier: string; fraisLivraison: number; description?: string }>({
+    name: '', quartier: '', fraisLivraison: 0, description: '',
+  });
 
   useEffect(() => { if (paramsQ.data) setParams(paramsQ.data); }, [paramsQ.data]);
 
@@ -27,21 +34,40 @@ export default function ParametresPage() {
     onError: () => toast.error('Erreur'),
   });
 
-  const addZoneMut = useMutation({
-    mutationFn: (payload: any) => parametreService.creerZone(payload),
-    onSuccess: () => { toast.success('Zone ajoutée'); setNewZone({ name: '', deliveryFrees: 0 }); qc.invalidateQueries({ queryKey: ['zones'] }); },
+  const saveZoneMut = useMutation({
+    mutationFn: () => editingZone
+      ? zoneService.update(editingZone.id, zoneForm)
+      : zoneService.create(zoneForm),
+    onSuccess: () => {
+      toast.success(editingZone ? 'Zone modifiée' : 'Zone ajoutée');
+      setZoneDialogOpen(false);
+      setEditingZone(null);
+      setZoneForm({ name: '', quartier: '', fraisLivraison: 0, description: '' });
+      qc.invalidateQueries({ queryKey: ['zones-livraison'] });
+    },
     onError: () => toast.error('Erreur'),
   });
 
   const removeZoneMut = useMutation({
-    mutationFn: (id: any) => parametreService.supprimerZone(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['zones'] }),
+    mutationFn: (id: number) => zoneService.delete(id),
+    onSuccess: () => { toast.success('Zone supprimée'); qc.invalidateQueries({ queryKey: ['zones-livraison'] }); },
     onError: () => toast.error('Erreur'),
   });
 
+  const openEditZone = (z: DeliveryZone) => {
+    setEditingZone(z);
+    setZoneForm({ name: z.name, quartier: z.quartier, fraisLivraison: z.fraisLivraison, description: z.description || '' });
+    setZoneDialogOpen(true);
+  };
+  const openNewZone = () => {
+    setEditingZone(null);
+    setZoneForm({ name: '', quartier: '', fraisLivraison: 0, description: '' });
+    setZoneDialogOpen(true);
+  };
+
   if (paramsQ.isLoading) return <div className="p-6"><LoadingState /></div>;
 
-  const zones = zonesQ.data || [];
+  const zones = (zonesQ.data || []) as DeliveryZone[];
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
@@ -72,25 +98,57 @@ export default function ParametresPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Zones de livraison</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          {zones.length === 0 && <p className="text-sm text-muted-foreground">Aucune zone</p>}
-          {zones.map((z: any) => (
-            <div key={z.id} className="flex items-center justify-between p-2 rounded-lg border border-border">
-              <div>
-                <p className="font-medium text-sm">{z.name}</p>
-                <p className="text-xs text-muted-foreground">{formatFCFA(z.frais || z.deliveryFrees || 0)}</p>
-              </div>
-              <Button size="icon" variant="ghost" onClick={() => removeZoneMut.mutate(z.id)}>
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Zones de livraison</CardTitle>
+          <Button size="sm" onClick={openNewZone} className="gap-1"><Plus className="w-4 h-4" /> Nouvelle zone</Button>
+        </CardHeader>
+        <CardContent>
+          {zones.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune zone</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs text-muted-foreground">
+                    <th className="p-3 text-left">Ville</th>
+                    <th className="p-3 text-left">Quartier</th>
+                    <th className="p-3 text-right">Frais livraison</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {zones.map((z) => (
+                    <tr key={z.id} className={cn('border-b border-border', z.fraisLivraison === 0 && 'bg-amber-50')}>
+                      <td className="p-3 font-medium">{z.name}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          {z.fraisLivraison === 0 && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+                          {z.quartier}
+                        </div>
+                      </td>
+                      <td className="p-3 text-right">
+                        {z.fraisLivraison > 0 ? (
+                          <span className="font-semibold text-primary">{formatFCFA(z.fraisLivraison)}</span>
+                        ) : (
+                          <span className="text-xs text-amber-600 italic font-medium">À définir</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openEditZone(z)} className="h-7 px-2">
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => removeZoneMut.mutate(z.id)} className="h-7 px-2 text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-          <div className="flex gap-2 pt-2 border-t border-border">
-            <Input placeholder="Nom zone" value={newZone.name} onChange={(e) => setNewZone({ ...newZone, name: e.target.value })} />
-            <Input type="number" placeholder="Frais" value={newZone.deliveryFrees} onChange={(e) => setNewZone({ ...newZone, deliveryFrees: parseInt(e.target.value || '0', 10) })} className="w-32" />
-            <Button onClick={() => newZone.name && addZoneMut.mutate(newZone)} size="icon"><Plus className="w-4 h-4" /></Button>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -111,6 +169,39 @@ export default function ParametresPage() {
       <Button onClick={() => updateMut.mutate(params)} disabled={updateMut.isPending} className="gap-2">
         <Save className="w-4 h-4" /> Enregistrer
       </Button>
+
+      <Dialog open={zoneDialogOpen} onOpenChange={setZoneDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingZone ? 'Modifier la zone' : 'Nouvelle zone de livraison'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>Ville *</Label>
+              <Input value={zoneForm.name} onChange={(e) => setZoneForm({ ...zoneForm, name: e.target.value })} placeholder="Ex: Calavi" className="mt-1" />
+            </div>
+            <div>
+              <Label>Quartier *</Label>
+              <Input value={zoneForm.quartier} onChange={(e) => setZoneForm({ ...zoneForm, quartier: e.target.value })} placeholder="Ex: Godomey Salamey" className="mt-1" />
+            </div>
+            <div>
+              <Label>Frais de livraison (FCFA) *</Label>
+              <Input type="number" value={zoneForm.fraisLivraison} onChange={(e) => setZoneForm({ ...zoneForm, fraisLivraison: parseInt(e.target.value || '0', 10) })} placeholder="Ex: 1500" min={0} className="mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">Plusieurs quartiers peuvent avoir les mêmes frais. Entrez 0 si non encore défini.</p>
+            </div>
+            <div>
+              <Label>Description (optionnel)</Label>
+              <Input value={zoneForm.description || ''} onChange={(e) => setZoneForm({ ...zoneForm, description: e.target.value })} placeholder="Ex: Zone périphérique" className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setZoneDialogOpen(false)}>Annuler</Button>
+            <Button onClick={() => saveZoneMut.mutate()} disabled={!zoneForm.name || !zoneForm.quartier || saveZoneMut.isPending}>
+              {editingZone ? 'Enregistrer' : 'Ajouter la zone'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

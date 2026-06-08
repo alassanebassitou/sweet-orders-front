@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock } from 'lucide-react';
+import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock, Truck, Clock, CheckCircle2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -195,6 +195,70 @@ export default function ClientCommandeDetail() {
           )}
         </CardContent>
       </Card>
+
+      {(() => {
+        const fraisLivraison = cmd.fraisLivraison || 0;
+        const fraisNonDefini = !!cmd.fraisLivraisonNonDefini && fraisLivraison === 0;
+        const fraisDefiniNonPaye = fraisLivraison > 0 && cmd.fraisLivraisonPaye === false;
+        const fraisPaye = fraisLivraison > 0 && cmd.fraisLivraisonPaye === true;
+        return (
+          <>
+            {fraisDefiniNonPaye && (
+              <Card className="border-2 border-primary/40 bg-primary/5">
+                <CardContent className="p-4 space-y-3">
+                  <p className="font-semibold text-sm flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-primary" /> Frais de livraison à régler
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Les frais pour votre quartier <strong className="text-foreground">{cmd.quartier}</strong> ont été définis :
+                  </p>
+                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
+                    <span className="text-sm">Frais de livraison</span>
+                    <span className="font-bold text-primary text-lg">{formatFCFA(fraisLivraison)}</span>
+                  </div>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={() => payWithKkiapay({
+                      amount: fraisLivraison,
+                      commandeId: cmd.id,
+                      clientInfo: {
+                        telephone: user?.telephone,
+                        name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+                        email: user?.email || '',
+                      },
+                      onSuccess: () => {
+                        toast.success('Frais de livraison payés !');
+                        qc.invalidateQueries({ queryKey: ['commande', id] });
+                      },
+                    })}
+                  >
+                    <CreditCard className="w-4 h-4" /> Payer les frais ({formatFCFA(fraisLivraison)})
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+            {fraisNonDefini && (
+              <Card className="border border-amber-300 bg-amber-50">
+                <CardContent className="p-4 space-y-2">
+                  <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                    <Clock className="w-4 h-4" /> Frais de livraison en attente
+                  </p>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Votre quartier <strong>{cmd.quartier}</strong> n'est pas encore répertorié.
+                    Le service administratif vous contactera. Vous recevrez une notification et un email dès que les frais seront définis.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            {fraisPaye && (
+              <div className="flex items-center gap-2 text-xs text-success p-2 bg-success/5 rounded-lg border border-success/20">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Frais de livraison payés ({formatFCFA(fraisLivraison)}) ✓
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {(cmd.status === 'PENDING_CONFIRMATION' || cmd.status === 'DRAFT') ? (
         <Card className="border-primary/30 bg-primary/5">

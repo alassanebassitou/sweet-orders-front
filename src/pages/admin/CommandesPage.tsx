@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2, Loader2 } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Plus, MessageCircle, Trash2, Loader2, Truck } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -73,7 +73,14 @@ const PAYMENT_FILTERS = [
   { value: 'unpaid',  label: 'Impayé' },
   { value: 'partial', label: 'Partiellement payé' },
   { value: 'paid',    label: 'Payé' },
+  { value: 'frais_manquants', label: '🚚 Frais manquants' },
 ];
+
+const hasMissingDeliveryFee = (c: any) =>
+  !!c.fraisLivraisonNonDefini ||
+  ((c.deliveryMode === 'HOME_DELIVERY' || c.modeLivraison === 'HOME_DELIVERY') &&
+    (!c.fraisLivraison || c.fraisLivraison === 0) &&
+    !!(c.deliveryAddress || c.adresseLivraison));
 
 const getPaymentBadge = (c: any) => {
   const total = c.totalAmount || c.montantTotal || 0;
@@ -138,6 +145,7 @@ export default function CommandesPage() {
       if (paymentFilter === 'unpaid') return paid === 0;
       if (paymentFilter === 'paid') return solde <= 0 && paid > 0;
       if (paymentFilter === 'partial') return paid > 0 && solde > 0;
+      if (paymentFilter === 'frais_manquants') return hasMissingDeliveryFee(c);
       return true;
     }), [commandes, search, paymentFilter]);
 
@@ -252,6 +260,11 @@ export default function CommandesPage() {
                           <span className="font-semibold text-sm">{c.numero}</span>
                           <Badge variant="secondary" className={`${st?.bg} ${st?.text} text-[10px]`}>{st?.label}</Badge>
                           {(() => { const pb = getPaymentBadge(c); return <Badge variant="secondary" className={`${pb.className} text-[10px]`}>{pb.label}</Badge>; })()}
+                          {hasMissingDeliveryFee(c) && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] gap-1">
+                              <Truck className="w-3 h-3" /> Frais livraison non définis
+                            </Badge>
+                          )}
                           {c.isEmergency && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
                         </div>
                         <p className="text-sm text-foreground mt-0.5">{c.clientName}</p>

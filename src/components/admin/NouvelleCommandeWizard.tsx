@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Plus, Search, Trash2, UserPlus, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, Plus, Search, Trash2, UserPlus, X, MapPin, Home, Truck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { commandeService, paiementService, productService, userService } from '@/lib/services';
+import { zoneService } from '@/lib/zoneService';
 import { formatFCFA } from '@/lib/format';
 
 interface Props {
@@ -57,6 +58,39 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const [adresse, setAdresse] = useState('');
   const [instructions, setInstructions] = useState('');
 
+  // ── Delivery zone state ──
+  const [ville, setVille] = useState('');
+  const [quartier, setQuartier] = useState('');
+  const [villeInput, setVilleInput] = useState('');
+  const [quartierInput, setQuartierInput] = useState('');
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [showVilleDropdown, setShowVilleDropdown] = useState(false);
+  const [showQuartierDropdown, setShowQuartierDropdown] = useState(false);
+  const [showUnknownModal, setShowUnknownModal] = useState(false);
+  const [fraisLivraison, setFraisLivraison] = useState(0);
+
+  const { data: allZones = [] } = useQuery({
+    queryKey: ['zones-livraison'],
+    queryFn: () => zoneService.getAll(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const allVilles = useMemo(
+    () => [...new Set((allZones as any[]).map((z) => z.name as string))].sort(),
+    [allZones],
+  );
+  const filteredVilles = useMemo(
+    () => villeInput.length === 0 ? allVilles : allVilles.filter((v) => v.toLowerCase().startsWith(villeInput.toLowerCase())),
+    [allVilles, villeInput],
+  );
+  const quartiersForVille = useMemo(
+    () => ville ? (allZones as any[]).filter((z) => z.name.toLowerCase() === ville.toLowerCase() && z.actif !== false) : [],
+    [allZones, ville],
+  );
+  const filteredQuartiers = useMemo(
+    () => quartierInput.length === 0 ? quartiersForVille : quartiersForVille.filter((z: any) => z.quartier.toLowerCase().startsWith(quartierInput.toLowerCase())),
+    [quartiersForVille, quartierInput],
+  );
+
   // Step 4 — Paiement
   const [acompteRecu, setAcompteRecu] = useState<'oui' | 'non'>('non');
   const [paiement, setPaiement] = useState({
@@ -96,12 +130,17 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     setNewClient({ lastname: '', firstname: '', phone: '', email: '', address: '', city: '' });
     setLignes([]);
     setDateLivraison(''); setCreneau('matin'); setMode('HOME_DELIVERY'); setAdresse(''); setInstructions('');
+    setVille(''); setQuartier(''); setVilleInput(''); setQuartierInput('');
+    setSelectedZone(null); setShowUnknownModal(false); setFraisLivraison(0);
     setAcompteRecu('non');
     setPaiement({ amount: 0, paymentMode: 'CASH', paymentDate: new Date().toISOString().split('T')[0], notes: '' });
   };
 
   const submitMut = useMutation({
     mutationFn: async () => {
+      if (mode === 'HOME_DELIVERY' && showUnknownModal && ville && quartier) {
+        try { await zoneService.recordUnknownQuartier(ville, quartier); } catch { /* ignore */ }
+      }
       const payload = {
         clientId: selectedClient.id,
         wishDeliveryDate: dateLivraison,
@@ -109,6 +148,10 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
         deliveryMode: mode,
         deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
         deliveryInstruction: instructions,
+        ville: mode === 'HOME_DELIVERY' ? ville : undefined,
+        quartier: mode === 'HOME_DELIVERY' ? quartier : undefined,
+        fraisLivraison: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
+        fraisLivraisonNonDefini: mode === 'HOME_DELIVERY' && showUnknownModal,
         source: 'MANUALLY',
         productRequests: lignes.map((l) => ({
           productId: l.produitId,
@@ -143,7 +186,13 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
   const canNext = () => {
     if (step === 0) return !!selectedClient;
     if (step === 1) return lignes.length > 0;
-    if (step === 2) return !!dateLivraison && (mode === 'COLLECTION_ON_SITE' || !!adresse);
+    if (step === 2) {
+      if (!dateLivraison) return false;
+      if (mode === 'HOME_DELIVERY') {
+        if (!ville.trim() || !quartier.trim() || !adresse.trim()) return false;
+      }
+      return true;
+    }
     if (step === 3) return acompteRecu === 'non' || (paiement.amount > 0);
     return true;
   };
@@ -305,7 +354,121 @@ const handleModeChange = (newMode: 'HOME_DELIVERY' | 'COLLECTION_ON_SITE') => {
               </div>
               {mode === 'HOME_DELIVERY' && (
                 <>
-                  <div><Label>Adresse</Label><Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="mt-1" /></div>
+                  {/* ── Ville ── */}
+                  <div className="space-y-1">
+                    <Label>Ville <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={villeInput}
+                        onChange={(e) => {
+                          setVilleInput(e.target.value); setVille(''); setQuartier(''); setQuartierInput('');
+                          setSelectedZone(null); setFraisLivraison(0); setShowUnknownModal(false); setShowVilleDropdown(true);
+                        }}
+                        onFocus={() => setShowVilleDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowVilleDropdown(false), 150)}
+                        placeholder="Ex: Calavi, Cotonou..."
+                        className="pl-9"
+                      />
+                      {showVilleDropdown && filteredVilles.length > 0 && (
+                        <div className="absolute z-50 w-full top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-52 overflow-y-auto">
+                          {filteredVilles.map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setVille(v); setVilleInput(v); setQuartier(''); setQuartierInput('');
+                                setSelectedZone(null); setFraisLivraison(0); setShowVilleDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-secondary flex items-center gap-2"
+                            >
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground" />{v}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {ville && (
+                      <p className="text-xs text-success flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> {ville} sélectionnée
+                      </p>
+                    )}
+                  </div>
+
+                  {ville && (
+                    <div className="space-y-1">
+                      <Label>Quartier <span className="text-destructive">*</span></Label>
+                      <div className="relative">
+                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={quartierInput}
+                          onChange={(e) => {
+                            setQuartierInput(e.target.value); setQuartier(''); setSelectedZone(null);
+                            setFraisLivraison(0); setShowUnknownModal(false); setShowQuartierDropdown(true);
+                          }}
+                          onFocus={() => setShowQuartierDropdown(true)}
+                          onBlur={() => setTimeout(() => setShowQuartierDropdown(false), 150)}
+                          placeholder="Ex: Godomey Salamey..."
+                          className="pl-9"
+                        />
+                        {showQuartierDropdown && quartierInput.length > 0 && (
+                          <div className="absolute z-50 w-full top-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-52 overflow-y-auto">
+                            {filteredQuartiers.map((z: any) => (
+                              <button
+                                key={z.id}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setQuartier(z.quartier); setQuartierInput(z.quartier); setSelectedZone(z);
+                                  setFraisLivraison(z.fraisLivraison || 0);
+                                  setShowUnknownModal((z.fraisLivraison || 0) === 0);
+                                  setShowQuartierDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-secondary flex items-center justify-between"
+                              >
+                                <span className="font-medium">{z.quartier}</span>
+                                {z.fraisLivraison > 0
+                                  ? <span className="text-xs font-semibold text-primary">+{formatFCFA(z.fraisLivraison)}</span>
+                                  : <span className="text-xs text-amber-600 italic">Frais à définir</span>}
+                              </button>
+                            ))}
+                            {quartierInput.length >= 3 && (
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setQuartier(quartierInput); setSelectedZone(null); setFraisLivraison(0);
+                                  setShowUnknownModal(true); setShowQuartierDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm text-muted-foreground hover:bg-secondary border-t border-border italic"
+                              >
+                                Utiliser "{quartierInput}" →
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {selectedZone && fraisLivraison > 0 && (
+                        <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                          <span className="text-sm flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /> Frais — {quartier}</span>
+                          <span className="font-bold text-primary text-sm">+{formatFCFA(fraisLivraison)}</span>
+                        </div>
+                      )}
+                      {showUnknownModal && (
+                        <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg space-y-2">
+                          <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" /> Quartier non répertorié
+                          </p>
+                          <p className="text-xs text-amber-800 leading-relaxed">
+                            Les frais de livraison ne sont pas encore définis pour ce quartier. Ils pourront être appliqués plus tard depuis la commande.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div><Label>Adresse complète <span className="text-destructive">*</span></Label><Input value={adresse} onChange={(e) => setAdresse(e.target.value)} className="mt-1" /></div>
                   <div><Label>Instructions</Label><Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="mt-1" /></div>
                 </>
               )}

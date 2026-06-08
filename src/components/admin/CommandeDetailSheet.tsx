@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
 import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
+import { zoneService } from '@/lib/zoneService';
 import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
@@ -40,6 +41,7 @@ export default function CommandeDetailSheet({
   const [paymentAmount, setPaymentAmount] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [depenseOpen, setDepenseOpen] = useState(false);
+  const [deliveryFeeInput, setDeliveryFeeInput] = useState('');
 
   const totalPaye = commande.totalPaye ?? commande.paye ?? 0;
   const total = commande.montantTotal ?? commande.totalAmount ?? 0;
@@ -139,6 +141,31 @@ export default function CommandeDetailSheet({
   });
 
   const change = (s: string) => statutMutation.mutate(s);
+
+  // ── Delivery fee application ──
+  const villeCmd: string | undefined = commande.ville;
+  const { data: allZonesForThisVille = [] } = useQuery({
+    queryKey: ['zones-for-ville', villeCmd],
+    queryFn: () => villeCmd ? zoneService.getQuartiersForVille(villeCmd) : Promise.resolve([]),
+    enabled: !!villeCmd,
+  });
+  const fraisManquants =
+    !!commande.fraisLivraisonNonDefini ||
+    ((commande.deliveryMode === 'HOME_DELIVERY' || commande.modeLivraison === 'HOME_DELIVERY') &&
+      (!commande.fraisLivraison || commande.fraisLivraison === 0));
+  const applyFeeMut = useMutation({
+    mutationFn: ({ commandeId, fraisLivraison }: { commandeId: any; fraisLivraison: number }) =>
+      zoneService.applyFeeToCommande(commandeId, fraisLivraison),
+    onSuccess: () => {
+      toast.success('Frais appliqués — client notifié par email et notification');
+      setDeliveryFeeInput('');
+      qc.invalidateQueries({ queryKey: ['commandes'] });
+      qc.invalidateQueries({ queryKey: ['commande', commande.id] });
+      qc.invalidateQueries({ queryKey: ['payment-verified', commande.id] });
+      onUpdated?.();
+    },
+    onError: () => toast.error("Erreur lors de l'application des frais"),
+  });
 
   return (
     <div className="fixed inset-0 z-50">
@@ -261,6 +288,71 @@ export default function CommandeDetailSheet({
               <p>🏪 Retrait sur place</p>
             )}
           </section>
+
+          {/* ── ⚠️ Frais livraison non définis ── */}
+          {fraisManquants && (
+            <section className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-amber-900">
+                <Truck className="w-5 h-5" />
+                <p className="font-semibold text-sm">Frais de livraison non définis</p>
+              </div>
+              <div className="text-xs text-amber-800 space-y-1">
+                <p>🏙️ Ville : <strong>{commande.ville || '—'}</strong></p>
+                <p>🏘️ Quartier : <strong>{commande.quartier || '—'}</strong></p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-amber-900">
+                  Appliquer les frais de livraison (FCFA)
+                </Label>
+                {(allZonesForThisVille as any[]).filter((z) => z.fraisLivraison > 0).length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Zones existantes pour {commande.ville} :</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(allZonesForThisVille as any[])
+                        .filter((z) => z.fraisLivraison > 0)
+                        .map((z: any) => (
+                          <button
+                            key={z.id}
+                            type="button"
+                            onClick={() => setDeliveryFeeInput(String(z.fraisLivraison))}
+                            className="text-xs px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+                          >
+                            {z.quartier}: {formatFCFA(z.fraisLivraison)}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={deliveryFeeInput}
+                    onChange={(e) => setDeliveryFeeInput(e.target.value)}
+                    placeholder="Ex: 1500"
+                    className="flex-1"
+                    min={0}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (!deliveryFeeInput || Number(deliveryFeeInput) <= 0) {
+                        toast.error('Entrez un montant valide');
+                        return;
+                      }
+                      applyFeeMut.mutate({ commandeId: commande.id, fraisLivraison: Number(deliveryFeeInput) });
+                    }}
+                    disabled={!deliveryFeeInput || applyFeeMut.isPending}
+                    className="gap-1"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Appliquer
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Le client sera notifié par email et in-app avec un lien pour payer ces frais.
+                </p>
+              </div>
+            </section>
+          )}
 
           {/* ── 💰 Finances ── */}
           <section className="rounded-lg border border-border p-3
