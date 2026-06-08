@@ -145,6 +145,7 @@ export default function CommandesPage() {
       if (paymentFilter === 'unpaid') return paid === 0;
       if (paymentFilter === 'paid') return solde <= 0 && paid > 0;
       if (paymentFilter === 'partial') return paid > 0 && solde > 0;
+      if (paymentFilter === 'frais_manquants') return hasMissingDeliveryFee(c);
       return true;
     }), [commandes, search, paymentFilter]);
 
