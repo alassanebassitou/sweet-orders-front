@@ -116,13 +116,20 @@ export default function ClientCommander() {
     onError: () => toast.error("Erreur lors de l'envoi de la commande"),
   });
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (mode === 'HOME_DELIVERY' && showUnknownModal && ville && quartier) {
+      try { await zoneService.recordUnknownQuartier(ville, quartier); } catch { /* non bloquant */ }
+    }
     const payload = {
       wishDeliveryDate: dateLivraison,
       creneauHoraire: creneau,
       deliveryMode: mode === 'HOME_DELIVERY' ? 'HOME_DELIVERY' : 'COLLECTION_ON_SITE',
       deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
       deliveryInstruction: instructions,
+      ville: mode === 'HOME_DELIVERY' ? ville : undefined,
+      quartier: mode === 'HOME_DELIVERY' ? quartier : undefined,
+      fraisLivraison: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
+      fraisLivraisonNonDefini: mode === 'HOME_DELIVERY' && showUnknownModal,
       source: 'APP',
       productRequests: items.map((it) => ({
         productId: it.produitId,
