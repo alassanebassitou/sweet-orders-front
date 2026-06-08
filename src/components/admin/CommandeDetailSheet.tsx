@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
 import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
+import { zoneService } from '@/lib/zoneService';
 import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { statutColors } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
