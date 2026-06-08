@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Plus, Search, Trash2, UserPlus, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, Plus, Search, Trash2, UserPlus, X, MapPin, Home, Truck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { commandeService, paiementService, productService, userService } from '@/lib/services';
+import { zoneService } from '@/lib/zoneService';
 import { formatFCFA } from '@/lib/format';
 
 interface Props {
