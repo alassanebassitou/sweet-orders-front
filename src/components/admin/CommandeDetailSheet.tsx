@@ -41,6 +41,7 @@ export default function CommandeDetailSheet({
   const [paymentAmount, setPaymentAmount] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [depenseOpen, setDepenseOpen] = useState(false);
+  const [deliveryFeeInput, setDeliveryFeeInput] = useState('');
 
   const totalPaye = commande.totalPaye ?? commande.paye ?? 0;
   const total = commande.montantTotal ?? commande.totalAmount ?? 0;
