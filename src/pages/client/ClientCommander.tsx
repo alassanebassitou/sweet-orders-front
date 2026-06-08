@@ -474,11 +474,32 @@ export default function ClientCommander() {
               </div>
               <div className="p-3 rounded-lg bg-secondary/40 text-sm space-y-1">
                 <p>📅 {dateLivraison} — {creneau}</p>
-                <p>{mode === 'HOME_DELIVERY' ? `📍 ${adresse}` : '🏪 Retrait sur place'}</p>
+                {mode === 'HOME_DELIVERY' ? (
+                  <>
+                    <p>🏙️ {ville} — 🏘️ {quartier}</p>
+                    <p>📍 {adresse}</p>
+                  </>
+                ) : (
+                  <p>🏪 Retrait sur place</p>
+                )}
               </div>
               <div className="p-3 rounded-lg bg-primary/10 text-sm space-y-1">
-                <div className="flex justify-between font-bold"><span>Total</span><span>{formatFCFA(total)}</span></div>
-                <div className="flex justify-between text-primary"><span>Acompte requis ({pourcentageAcompte}%)</span><span>{formatFCFA(acompteRequis)}</span></div>
+                <div className="flex justify-between"><span>Sous-total produits</span><span>{formatFCFA(totalProduits)}</span></div>
+                {mode === 'HOME_DELIVERY' && (
+                  fraisLivraison > 0 ? (
+                    <div className="flex justify-between text-primary">
+                      <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Frais livraison ({quartier})</span>
+                      <span>+{formatFCFA(fraisLivraison)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-amber-600">
+                      <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Frais livraison</span>
+                      <span className="text-xs italic">À définir</span>
+                    </div>
+                  )
+                )}
+                <div className="flex justify-between font-bold border-t border-border pt-2"><span>Total commande</span><span>{formatFCFA(totalCommande)}</span></div>
+                <div className="flex justify-between text-muted-foreground text-xs"><span>Acompte requis ({pourcentageAcompte}%)</span><span>{formatFCFA(acompteRequis)}</span></div>
               </div>
             </div>
           )}
