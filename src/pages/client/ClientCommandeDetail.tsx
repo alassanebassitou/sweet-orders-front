@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock, Truck, Clock, CheckCircle2, CreditCard } from 'lucide-react';
+import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock, Truck, Clock, CheckCircle2, CreditCard, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { commandeService } from '@/lib/services';
+import { commandeService, invoiceService } from '@/lib/services';
 import { avisService } from '@/lib/avisService';
 import { statutOrder } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
