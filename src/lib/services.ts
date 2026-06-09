@@ -191,3 +191,20 @@ export const paymentService = {
   verifyKkiapay: (transactionId: string, commandeId: string | number) =>
     api.post('/payments/kkiapay/verify', { transactionId, commandeId }).then(r => r.data),
 };
+
+// ---- Invoices
+export const invoiceService = {
+  getByCommande: (commandeId: number | string) =>
+    api.get(`/invoices/commande/${commandeId}`).then(r => r.data),
+  downloadPdf: (invoiceId: number) =>
+    api.get(`/invoices/${invoiceId}/pdf`, { responseType: 'blob' }).then(r => {
+      const url = URL.createObjectURL(r.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `facture-${invoiceId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }),
+  resend: (invoiceId: number) =>
+    api.post(`/admin/invoices/${invoiceId}/resend`).then(r => r.data),
+};

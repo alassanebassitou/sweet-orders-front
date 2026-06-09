@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check, FileText, Download, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
-import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
+import { commandeService, paiementService, financeService, parametreService, invoiceService } from '@/lib/services';
 import { zoneService } from '@/lib/zoneService';
 import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { statutColors } from '@/lib/constants';
@@ -63,6 +63,18 @@ export default function CommandeDetailSheet({
     enabled: !!commande.id,
   });
   const depenses = depensesQ.data || [];
+
+  const invoicesQ = useQuery({
+    queryKey: ['invoices-admin', commande.id],
+    queryFn: () => invoiceService.getByCommande(commande.id),
+    enabled: !!commande.id,
+  });
+  const invoices = invoicesQ.data || [];
+  const resendInvoiceMut = useMutation({
+    mutationFn: (id: number) => invoiceService.resend(id),
+    onSuccess: () => toast.success('Email de relance envoyé'),
+    onError: () => toast.error("Échec d'envoi de la relance"),
+  });
 
   const { data: templates = [] } = useQuery({
     queryKey: ['templates'],
@@ -339,7 +351,7 @@ export default function CommandeDetailSheet({
                         toast.error('Entrez un montant valide');
                         return;
                       }
-                      applyFeeMut.mutate({ commandeId: commande.id, fraisLivraison: Number(deliveryFeeInput) });
+                      applyFeeMut.mutate({ commandeId: commande.id, deliveryFees: Number(deliveryFeeInput) });
                     }}
                     disabled={!deliveryFeeInput || applyFeeMut.isPending}
                     className="gap-1"
@@ -584,6 +596,41 @@ export default function CommandeDetailSheet({
                   Enregistrer le solde ({formatFCFA(reste)})
                 </Button>
               )
+            )}
+
+            {invoices.length > 0 && (
+              <div className="space-y-2 p-3 bg-secondary/30 rounded-lg border border-border">
+                <h4 className="font-semibold text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Factures ({invoices.length})
+                </h4>
+                {invoices.map((inv: any) => {
+                  const typeLabel = ({
+                    ACOMPTE: "🧾 Facture d'acompte",
+                    SOLDE: '🧾 Facture de solde',
+                    INTEGRAL: '🧾 Facture paiement intégral',
+                    FRAIS_LIVRAISON: '🧾 Facture frais de livraison',
+                  } as Record<string, string>)[inv.type] || '🧾 Facture';
+                  return (
+                    <div key={inv.id} className="flex items-center justify-between gap-2 p-2 bg-card rounded border border-border">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate">{typeLabel}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {inv.numero} — {new Date(inv.dateEmission).toLocaleDateString('fr-FR')}
+                        </p>
+                        <p className="text-xs font-semibold text-primary">{formatFCFA(inv.montantFacture)}</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => invoiceService.downloadPdf(inv.id)}>
+                          <Download className="w-3 h-3" /> PDF
+                        </Button>
+                        <Button size="sm" variant="ghost" className="gap-1 h-7 text-xs" disabled={resendInvoiceMut.isPending} onClick={() => resendInvoiceMut.mutate(inv.id)}>
+                          <Send className="w-3 h-3" /> Relance
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
 
             {/* WhatsApp — smart template-based message */}

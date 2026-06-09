@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock, Truck, Clock, CheckCircle2, CreditCard } from 'lucide-react';
+import { ArrowLeft, Check, RotateCw, Star, Edit, Save, Lock, Truck, Clock, CheckCircle2, CreditCard, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { commandeService } from '@/lib/services';
+import { commandeService, invoiceService } from '@/lib/services';
 import { avisService } from '@/lib/avisService';
 import { statutOrder } from '@/lib/constants';
 import { formatFCFA, formatDate } from '@/lib/format';
@@ -49,6 +49,15 @@ export default function ClientCommandeDetail() {
     queryFn: () => commandeService.balance(id!),
     enabled: !!id,
   });
+
+  const invoicesQ = useQuery({
+    queryKey: ['invoices', id],
+    queryFn: () => invoiceService.getByCommande(id!),
+    enabled: !!id,
+  });
+  const invoices = invoicesQ.data || [];
+
+
 
   const dupliquerMut = useMutation({
   mutationFn: (date: string) =>
@@ -195,6 +204,42 @@ export default function ClientCommandeDetail() {
           )}
         </CardContent>
       </Card>
+
+      {invoices.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              Mes factures
+            </h3>
+            {invoices.map((inv: any) => {
+              const typeLabel = ({
+                ACOMPTE: "🧾 Facture d'acompte",
+                SOLDE: '🧾 Facture de solde',
+                INTEGRAL: '🧾 Facture paiement intégral',
+                FRAIS_LIVRAISON: '🧾 Facture frais de livraison',
+              } as Record<string, string>)[inv.type] || '🧾 Facture';
+              return (
+                <div key={inv.id} className="flex items-center justify-between p-3 bg-secondary/40 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">{typeLabel}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.numero} — {new Date(inv.dateEmission).toLocaleDateString('fr-FR')}
+                    </p>
+                    <p className="text-xs font-semibold text-primary">{formatFCFA(inv.montantFacture)}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => invoiceService.downloadPdf(inv.id)}>
+                    <Download className="w-3.5 h-3.5" />
+                    PDF
+                  </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {(() => {
         const fraisLivraison = cmd.fraisLivraison || 0;
