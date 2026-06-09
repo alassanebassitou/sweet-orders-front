@@ -64,6 +64,18 @@ export default function CommandeDetailSheet({
   });
   const depenses = depensesQ.data || [];
 
+  const invoicesQ = useQuery({
+    queryKey: ['invoices-admin', commande.id],
+    queryFn: () => invoiceService.getByCommande(commande.id),
+    enabled: !!commande.id,
+  });
+  const invoices = invoicesQ.data || [];
+  const resendInvoiceMut = useMutation({
+    mutationFn: (id: number) => invoiceService.resend(id),
+    onSuccess: () => toast.success('Email de relance envoyé'),
+    onError: () => toast.error("Échec d'envoi de la relance"),
+  });
+
   const { data: templates = [] } = useQuery({
     queryKey: ['templates'],
     queryFn: () => parametreService.templates(),
