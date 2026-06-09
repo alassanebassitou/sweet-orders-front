@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check } from 'lucide-react';
+import { X, Phone, Mail, MapPin, MessageCircle, Plus, Trash2, AlertTriangle, AlertCircle, CheckCircle2, CreditCard, Truck, Check, FileText, Download, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
