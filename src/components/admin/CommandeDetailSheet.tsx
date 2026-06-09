@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AjouterDepenseDialog from '@/components/admin/AjouterDepenseDialog';
-import { commandeService, paiementService, financeService, parametreService } from '@/lib/services';
+import { commandeService, paiementService, financeService, parametreService, invoiceService } from '@/lib/services';
 import { zoneService } from '@/lib/zoneService';
 import { getWhatsAppAction, handleSendWhatsAppFull, buttonColorClass } from '@/lib/whatsappUtils';
 import { statutColors } from '@/lib/constants';
