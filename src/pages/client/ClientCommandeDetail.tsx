@@ -50,6 +50,15 @@ export default function ClientCommandeDetail() {
     enabled: !!id,
   });
 
+  const invoicesQ = useQuery({
+    queryKey: ['invoices', id],
+    queryFn: () => invoiceService.getByCommande(id!),
+    enabled: !!id,
+  });
+  const invoices = invoicesQ.data || [];
+
+
+
   const dupliquerMut = useMutation({
   mutationFn: (date: string) =>
     commandeService.dupliquer(id!, date),
