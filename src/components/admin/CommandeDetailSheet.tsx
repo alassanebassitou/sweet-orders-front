@@ -47,7 +47,7 @@ export default function CommandeDetailSheet({
   const total = commande.montantTotal ?? commande.totalAmount ?? 0;
   const reste = total - totalPaye;
   const isFullyPaid = reste <= 0;
-  const st = statutColors[commande.statut];
+  const st = statutColors[commande.status];
   const transition = transitions[commande.statut];
 
   // ✅ NEW — verify if order has received at least one payment
@@ -143,19 +143,19 @@ export default function CommandeDetailSheet({
   const change = (s: string) => statutMutation.mutate(s);
 
   // ── Delivery fee application ──
-  const villeCmd: string | undefined = commande.ville;
+  const villeCmd: string | undefined = commande.city;
   const { data: allZonesForThisVille = [] } = useQuery({
     queryKey: ['zones-for-ville', villeCmd],
     queryFn: () => villeCmd ? zoneService.getQuartiersForVille(villeCmd) : Promise.resolve([]),
     enabled: !!villeCmd,
   });
   const fraisManquants =
-    !!commande.fraisLivraisonNonDefini ||
-    ((commande.deliveryMode === 'HOME_DELIVERY' || commande.modeLivraison === 'HOME_DELIVERY') &&
-      (!commande.fraisLivraison || commande.fraisLivraison === 0));
+    !!commande.isDeliveryFeesApplied ||
+    ((commande.deliveryMode === 'HOME_DELIVERY') &&
+      (!commande.deliveryFees || commande.deliveryFees === 0));
   const applyFeeMut = useMutation({
-    mutationFn: ({ commandeId, fraisLivraison }: { commandeId: any; fraisLivraison: number }) =>
-      zoneService.applyFeeToCommande(commandeId, fraisLivraison),
+    mutationFn: ({ commandeId, deliveryFees }: { commandeId: any; deliveryFees: number }) =>
+      zoneService.applyFeeToCommande(commandeId, deliveryFees),
     onSuccess: () => {
       toast.success('Frais appliqués — client notifié par email et notification');
       setDeliveryFeeInput('');
@@ -297,27 +297,27 @@ export default function CommandeDetailSheet({
                 <p className="font-semibold text-sm">Frais de livraison non définis</p>
               </div>
               <div className="text-xs text-amber-800 space-y-1">
-                <p>🏙️ Ville : <strong>{commande.ville || '—'}</strong></p>
-                <p>🏘️ Quartier : <strong>{commande.quartier || '—'}</strong></p>
+                <p>🏙️ Ville : <strong>{commande.city || '—'}</strong></p>
+                <p>🏘️ Quartier : <strong>{commande.neighborhood || '—'}</strong></p>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-amber-900">
                   Appliquer les frais de livraison (FCFA)
                 </Label>
-                {(allZonesForThisVille as any[]).filter((z) => z.fraisLivraison > 0).length > 0 && (
+                {(allZonesForThisVille as any[]).filter((z) => z.deliveryFees > 0).length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Zones existantes pour {commande.ville} :</p>
+                    <p className="text-xs text-muted-foreground">Zones existantes pour {commande.city} :</p>
                     <div className="flex flex-wrap gap-1">
                       {(allZonesForThisVille as any[])
-                        .filter((z) => z.fraisLivraison > 0)
+                        .filter((z) => z.deliveryFees > 0)
                         .map((z: any) => (
                           <button
                             key={z.id}
                             type="button"
-                            onClick={() => setDeliveryFeeInput(String(z.fraisLivraison))}
+                            onClick={() => setDeliveryFeeInput(String(z.deliveryFees))}
                             className="text-xs px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
                           >
-                            {z.quartier}: {formatFCFA(z.fraisLivraison)}
+                            {z.neighborhood}: {formatFCFA(z.deliveryFees)}
                           </button>
                         ))}
                     </div>

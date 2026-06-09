@@ -47,7 +47,7 @@ export default function ClientCommander() {
   const [fraisLivraison, setFraisLivraison] = useState(0);
 
   const { data: allZones = [] } = useQuery({
-    queryKey: ['zones-livraison'],
+    queryKey: ['delivery-zones'],
     queryFn: () => zoneService.getAll(),
     staleTime: 5 * 60 * 1000,
   });
@@ -57,6 +57,24 @@ export default function ClientCommander() {
     [allZones],
   );
 
+  const allQuartiers = useMemo(() => {
+
+  let zones = (allZones as any[]).filter((z) => z.actif !== false);
+  
+  // OPTIONAL: If a city IS selected, narrow down the neighborhoods. 
+  // If NO city is selected, it keeps all neighborhoods across all cities.
+  if (ville) {
+    zones = zones.filter((z) => z.name.toLowerCase() === ville.toLowerCase());
+  }
+
+  // Extract just the neighborhood names, remove duplicates, and sort alphabetically
+  const neighborhoodNames = zones
+    .map((z) => z.neighborhood)
+    .filter(Boolean); // removes null/undefined values if any exist
+
+  return [...new Set(neighborhoodNames)].sort();
+}, [allZones, ville]);
+
   const filteredVilles = useMemo(
     () => villeInput.length === 0
       ? allVilles
@@ -64,18 +82,11 @@ export default function ClientCommander() {
     [allVilles, villeInput],
   );
 
-  const quartiersForVille = useMemo(
-    () => ville
-      ? (allZones as any[]).filter((z) => z.name.toLowerCase() === ville.toLowerCase() && z.actif !== false)
-      : [],
-    [allZones, ville],
-  );
-
   const filteredQuartiers = useMemo(
     () => quartierInput.length === 0
-      ? quartiersForVille
-      : quartiersForVille.filter((z: any) => z.quartier.toLowerCase().startsWith(quartierInput.toLowerCase())),
-    [quartiersForVille, quartierInput],
+      ? allQuartiers
+      : allQuartiers.filter((z: any) => z.neighborhood?.toLowerCase().startsWith(quartierInput.toLowerCase())),
+    [allQuartiers, quartierInput],
   );
 
   const totalProduits = total;
@@ -126,10 +137,10 @@ export default function ClientCommander() {
       deliveryMode: mode === 'HOME_DELIVERY' ? 'HOME_DELIVERY' : 'COLLECTION_ON_SITE',
       deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
       deliveryInstruction: instructions,
-      ville: mode === 'HOME_DELIVERY' ? ville : undefined,
-      quartier: mode === 'HOME_DELIVERY' ? quartier : undefined,
-      fraisLivraison: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
-      fraisLivraisonNonDefini: mode === 'HOME_DELIVERY' && showUnknownModal,
+      city: mode === 'HOME_DELIVERY' ? ville : undefined,
+      neighborhood: mode === 'HOME_DELIVERY' ? quartier : undefined,
+      deliveryFees: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
+      isDeliveryFeesApplied: mode === 'HOME_DELIVERY' && showUnknownModal,
       source: 'APP',
       productRequests: items.map((it) => ({
         productId: it.produitId,
@@ -352,18 +363,18 @@ export default function ClientCommander() {
                                 type="button"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => {
-                                  setQuartier(z.quartier);
-                                  setQuartierInput(z.quartier);
+                                  setQuartier(z.neighborhood);
+                                  setQuartierInput(z.neighborhood);
                                   setSelectedZone(z);
-                                  setFraisLivraison(z.fraisLivraison || 0);
-                                  setShowUnknownModal((z.fraisLivraison || 0) === 0);
+                                  setFraisLivraison(z.deliveryFees || 0);
+                                  setShowUnknownModal((z.deliveryFees || 0) === 0);
                                   setShowQuartierDropdown(false);
                                 }}
                                 className="w-full text-left px-4 py-3 text-sm hover:bg-secondary transition-colors flex items-center justify-between"
                               >
-                                <span className="font-medium">{z.quartier}</span>
-                                {z.fraisLivraison > 0 ? (
-                                  <span className="text-xs font-semibold text-primary">+{formatFCFA(z.fraisLivraison)}</span>
+                                <span className="font-medium">{z.neighborhood}</span>
+                                {z.deliveryFees > 0 ? (
+                                  <span className="text-xs font-semibold text-primary">+{formatFCFA(z.deliveryFees)}</span>
                                 ) : (
                                   <span className="text-xs text-amber-600 italic">Frais à définir</span>
                                 )}

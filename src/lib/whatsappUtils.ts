@@ -86,9 +86,9 @@ export const getTemplateTypeForPayment = (
 };
 
 export const buttonColorClass: Record<WhatsAppAction['variant'], string> = {
-  default: 'text-green-700 border-green-300 hover:bg-green-50',
-  warning: 'text-amber-700 border-amber-300 hover:bg-amber-50',
-  destructive: 'text-red-700 border-red-300 hover:bg-red-50',
+  default: 'text-green-700 border-green-300 hover:bg-green-500',
+  warning: 'text-amber-700 border-amber-300 hover:bg-amber-500',
+  destructive: 'text-red-700 border-red-300 hover:bg-red-500',
 };
 
 export const handleSendWhatsAppFull = async (

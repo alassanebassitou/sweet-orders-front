@@ -92,7 +92,7 @@ export const paiementService = {
     api.get(`/payments/verification/${commandeId}`)
       .then(r => r.data.verified as boolean),
   sendRelanceEmail: (commandeId: string | number) =>
-    api.post(`/payments/${commandeId}/relance-email`).then(r => r.data),
+    api.post(`/admin/payments/${commandeId}/relance-email`).then(r => r.data),
 };
 
 // ---- Production

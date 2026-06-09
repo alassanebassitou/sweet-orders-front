@@ -65,17 +65,17 @@ export default function CataloguePage() {
       setPhotoUrl(created?.photoUrl || '');
       setAdditionalPhotos(created?.additionalPhotos || []);
     },
-    onError: () => toast.error('Erreur création'),
+    onError: (e) => toast.error(e.message || 'Erreur création'),
   });
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: string | number; payload: Partial<Product> }) => productService.update(id, payload),
     onSuccess: () => { toast.success('Produit mis à jour'); invalidate(); setOpen(false); },
-    onError: () => toast.error('Erreur mise à jour'),
+    onError: (e) => toast.error(e.message || 'Erreur mise à jour'),
   });
   const removeMut = useMutation({
     mutationFn: (id: string | number) => productService.remove(id),
     onSuccess: () => { toast.success('Produit désactivé'); invalidate(); },
-    onError: () => toast.error('Erreur suppression'),
+    onError: (e) => toast.error(e.message || 'Erreur suppression'),
   });
 
   const openNew = () => {

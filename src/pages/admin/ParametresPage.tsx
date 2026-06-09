@@ -17,13 +17,13 @@ import { cn } from '@/lib/utils';
 export default function ParametresPage() {
   const qc = useQueryClient();
   const paramsQ = useQuery({ queryKey: ['parametres'], queryFn: parametreService.get });
-  const zonesQ = useQuery({ queryKey: ['zones-livraison'], queryFn: () => zoneService.getAll() });
+  const zonesQ = useQuery({ queryKey: ['delivery-zones'], queryFn: () => zoneService.getAll() });
 
   const [params, setParams] = useState<any>({});
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<DeliveryZone | null>(null);
-  const [zoneForm, setZoneForm] = useState<{ name: string; quartier: string; fraisLivraison: number; description?: string }>({
-    name: '', quartier: '', fraisLivraison: 0, description: '',
+  const [zoneForm, setZoneForm] = useState<{ name: string; neighborhood: string; deliveryFees: number; description?: string }>({
+    name: '', neighborhood: '', deliveryFees: 0, description: '',
   });
 
   useEffect(() => { if (paramsQ.data) setParams(paramsQ.data); }, [paramsQ.data]);
@@ -42,26 +42,26 @@ export default function ParametresPage() {
       toast.success(editingZone ? 'Zone modifiée' : 'Zone ajoutée');
       setZoneDialogOpen(false);
       setEditingZone(null);
-      setZoneForm({ name: '', quartier: '', fraisLivraison: 0, description: '' });
-      qc.invalidateQueries({ queryKey: ['zones-livraison'] });
+      setZoneForm({ name: '', neighborhood: '', deliveryFees: 0, description: '' });
+      qc.invalidateQueries({ queryKey: ['delivery-zones'] });
     },
     onError: () => toast.error('Erreur'),
   });
 
   const removeZoneMut = useMutation({
     mutationFn: (id: number) => zoneService.delete(id),
-    onSuccess: () => { toast.success('Zone supprimée'); qc.invalidateQueries({ queryKey: ['zones-livraison'] }); },
+    onSuccess: () => { toast.success('Zone supprimée'); qc.invalidateQueries({ queryKey: ['delivery-zones'] }); },
     onError: () => toast.error('Erreur'),
   });
 
   const openEditZone = (z: DeliveryZone) => {
     setEditingZone(z);
-    setZoneForm({ name: z.name, quartier: z.quartier, fraisLivraison: z.fraisLivraison, description: z.description || '' });
+    setZoneForm({ name: z.name, neighborhood: z.neighborhood, deliveryFees: z.deliveryFees, description: z.description || '' });
     setZoneDialogOpen(true);
   };
   const openNewZone = () => {
     setEditingZone(null);
-    setZoneForm({ name: '', quartier: '', fraisLivraison: 0, description: '' });
+    setZoneForm({ name: '', neighborhood: '', deliveryFees: 0, description: '' });
     setZoneDialogOpen(true);
   };
 
@@ -118,17 +118,17 @@ export default function ParametresPage() {
                 </thead>
                 <tbody>
                   {zones.map((z) => (
-                    <tr key={z.id} className={cn('border-b border-border', z.fraisLivraison === 0 && 'bg-amber-50')}>
+                    <tr key={z.id} className={cn('border-b border-border', z.deliveryFees === 0 && 'bg-amber-50')}>
                       <td className="p-3 font-medium">{z.name}</td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
-                          {z.fraisLivraison === 0 && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
-                          {z.quartier}
+                          {z.deliveryFees === 0 && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+                          {z.neighborhood}
                         </div>
                       </td>
                       <td className="p-3 text-right">
-                        {z.fraisLivraison > 0 ? (
-                          <span className="font-semibold text-primary">{formatFCFA(z.fraisLivraison)}</span>
+                        {z.deliveryFees > 0 ? (
+                          <span className="font-semibold text-primary">{formatFCFA(z.deliveryFees)}</span>
                         ) : (
                           <span className="text-xs text-amber-600 italic font-medium">À définir</span>
                         )}
@@ -182,11 +182,11 @@ export default function ParametresPage() {
             </div>
             <div>
               <Label>Quartier *</Label>
-              <Input value={zoneForm.quartier} onChange={(e) => setZoneForm({ ...zoneForm, quartier: e.target.value })} placeholder="Ex: Godomey Salamey" className="mt-1" />
+              <Input value={zoneForm.neighborhood} onChange={(e) => setZoneForm({ ...zoneForm, neighborhood: e.target.value })} placeholder="Ex: Godomey Salamey" className="mt-1" />
             </div>
             <div>
               <Label>Frais de livraison (FCFA) *</Label>
-              <Input type="number" value={zoneForm.fraisLivraison} onChange={(e) => setZoneForm({ ...zoneForm, fraisLivraison: parseInt(e.target.value || '0', 10) })} placeholder="Ex: 1500" min={0} className="mt-1" />
+              <Input type="number" value={zoneForm.deliveryFees} onChange={(e) => setZoneForm({ ...zoneForm, deliveryFees: parseInt(e.target.value || '0', 10) })} placeholder="Ex: 1500" min={0} className="mt-1" />
               <p className="text-xs text-muted-foreground mt-1">Plusieurs quartiers peuvent avoir les mêmes frais. Entrez 0 si non encore défini.</p>
             </div>
             <div>
@@ -196,7 +196,7 @@ export default function ParametresPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setZoneDialogOpen(false)}>Annuler</Button>
-            <Button onClick={() => saveZoneMut.mutate()} disabled={!zoneForm.name || !zoneForm.quartier || saveZoneMut.isPending}>
+            <Button onClick={() => saveZoneMut.mutate()} disabled={!zoneForm.name || !zoneForm.neighborhood || !zoneForm.deliveryFees || saveZoneMut.isPending}>
               {editingZone ? 'Enregistrer' : 'Ajouter la zone'}
             </Button>
           </DialogFooter>

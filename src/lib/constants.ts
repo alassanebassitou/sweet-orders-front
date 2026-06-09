@@ -1,6 +1,6 @@
 export const statutColors: Record<string, { bg: string; text: string; label: string }> = {
   PENDING_CONFIRMATION: { bg: 'bg-warning/15', text: 'text-warning', label: 'En attente' },
-  CONFIRMED: { bg: 'bg-info/15', text: 'text-info', label: 'Confirmée' },
+  CONFIRMED: { bg: 'bg-sky-500/15', text: 'text-sky-600', label: 'Confirmée' },
   IN_PRODUCTION: { bg: 'bg-primary/15', text: 'text-primary', label: 'En production' },
   READY: { bg: 'bg-accent/15', text: 'text-accent', label: 'Prête' },
   DELIVERED: { bg: 'bg-success/15', text: 'text-success', label: 'Livrée' },

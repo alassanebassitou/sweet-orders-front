@@ -77,10 +77,10 @@ const PAYMENT_FILTERS = [
 ];
 
 const hasMissingDeliveryFee = (c: any) =>
-  !!c.fraisLivraisonNonDefini ||
-  ((c.deliveryMode === 'HOME_DELIVERY' || c.modeLivraison === 'HOME_DELIVERY') &&
-    (!c.fraisLivraison || c.fraisLivraison === 0) &&
-    !!(c.deliveryAddress || c.adresseLivraison));
+  !!c.isDeliveryFeesApplied ||
+  ((c.deliveryMode === 'HOME_DELIVERY' || c.deliveryMode === 'HOME_DELIVERY') &&
+    (!c.deliveryFees || c.deliveryFees === 0) &&
+    !!(c.deliveryAddress || c.deliveryAddress));
 
 const getPaymentBadge = (c: any) => {
   const total = c.totalAmount || c.montantTotal || 0;
