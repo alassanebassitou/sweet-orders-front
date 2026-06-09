@@ -351,7 +351,7 @@ export default function CommandeDetailSheet({
                         toast.error('Entrez un montant valide');
                         return;
                       }
-                      applyFeeMut.mutate({ commandeId: commande.id, fraisLivraison: Number(deliveryFeeInput) });
+                      applyFeeMut.mutate({ commandeId: commande.id, deliveryFees: Number(deliveryFeeInput) });
                     }}
                     disabled={!deliveryFeeInput || applyFeeMut.isPending}
                     className="gap-1"
