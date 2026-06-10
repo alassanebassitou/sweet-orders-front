@@ -593,19 +593,29 @@ export default function CommandeDetailSheet({
           {/* ── Action buttons ── */}
           <div className="space-y-2">
 
-            {/* ✅ Quick transition button — disabled if not verified */}
+            {/* ✅ Quick transition button — hidden when delivered/cancelled */}
             {transition &&
-              commande.status !== 'CANCELLED' && (
+              commande.status !== 'CANCELLED' &&
+              !isDelivered && (
                 <Button
                   onClick={() => change(transition.next)}
-                  disabled={statutMutation.isPending || !isVerified}
+                  disabled={
+                    statutMutation.isPending ||
+                    !isVerified ||
+                    (transition.next === 'DELIVERED' && !isFullyPaid)
+                  }
                   className={cn(
                     'w-full',
-                    !isVerified && 'opacity-50 cursor-not-allowed'
+                    (!isVerified || (transition.next === 'DELIVERED' && !isFullyPaid)) &&
+                      'opacity-50 cursor-not-allowed'
                   )}>
                   {transition.label}
+                  {transition.next === 'DELIVERED' && !isFullyPaid && (
+                    <span className="ml-2 text-xs opacity-70">(paiement requis)</span>
+                  )}
                 </Button>
               )}
+
 
             {/* ✅ Payment button — 3 states */}
             {!paymentOpen && (
