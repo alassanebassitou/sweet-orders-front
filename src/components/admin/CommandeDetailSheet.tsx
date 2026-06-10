@@ -117,8 +117,22 @@ export default function CommandeDetailSheet({
       onUpdated?.();
       qc.invalidateQueries({ queryKey: ['commandes'] });
     },
-    onError: () => toast.error('Erreur lors du changement de statut'),
+    onError: (err: any) => {
+      const code = err?.response?.data?.error;
+      const msg = err?.response?.data?.message;
+      if (code === 'PAYMENT_REQUIRED') {
+        toast.error(
+          msg || 'Veuillez enregistrer le paiement complet avant de marquer comme livrée.',
+          { duration: 5000 }
+        );
+      } else if (code === 'ORDER_ALREADY_DELIVERED') {
+        toast.error('Cette commande a déjà été livrée.');
+      } else {
+        toast.error(msg || 'Erreur lors du changement de statut');
+      }
+    },
   });
+
 
   const paiementMutation = useMutation({
     mutationFn: (amount: number) =>
