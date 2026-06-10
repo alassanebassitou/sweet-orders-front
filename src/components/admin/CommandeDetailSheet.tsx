@@ -49,6 +49,8 @@ export default function CommandeDetailSheet({
   const isFullyPaid = reste <= 0;
   const st = statutColors[commande.status];
   const transition = transitions[commande.statut];
+  const isDelivered = commande.status === 'DELIVERED' || commande.statut === 'DELIVERED';
+
 
   // ✅ NEW — verify if order has received at least one payment
   const { data: isVerified = false, isLoading: verifying } = useQuery({
@@ -117,8 +119,22 @@ export default function CommandeDetailSheet({
       onUpdated?.();
       qc.invalidateQueries({ queryKey: ['commandes'] });
     },
-    onError: () => toast.error('Erreur lors du changement de statut'),
+    onError: (err: any) => {
+      const code = err?.response?.data?.error;
+      const msg = err?.response?.data?.message;
+      if (code === 'PAYMENT_REQUIRED') {
+        toast.error(
+          msg || 'Veuillez enregistrer le paiement complet avant de marquer comme livrée.',
+          { duration: 5000 }
+        );
+      } else if (code === 'ORDER_ALREADY_DELIVERED') {
+        toast.error('Cette commande a déjà été livrée.');
+      } else {
+        toast.error(msg || 'Erreur lors du changement de statut');
+      }
+    },
   });
+
 
   const paiementMutation = useMutation({
     mutationFn: (amount: number) =>
@@ -459,39 +475,61 @@ export default function CommandeDetailSheet({
             </Button>
           </section>
 
-          {/* ── ✅ Changer le statut — disabled if not verified ── */}
-          <section className="space-y-1">
-            <Label>Changer le statut</Label>
-            <Select
-              disabled={!isVerified}
-              value={statut}
-              onValueChange={change}>
-              <SelectTrigger
-                className={cn(
-                  'mt-1',
-                  !isVerified && 'opacity-50 cursor-not-allowed'
-                )}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING_CONFIRMATION">
-                  En attente
-                </SelectItem>
-                <SelectItem value="CONFIRMED">Confirmée</SelectItem>
-                <SelectItem value="IN_PRODUCTION">En production</SelectItem>
-                <SelectItem value="READY">Prête</SelectItem>
-                <SelectItem value="DELIVERED">Livrée</SelectItem>
-                <SelectItem value="CANCELLED">Annulée</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Warning when disabled */}
-            {!isVerified && (
-              <p className="text-xs text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                Un acompte doit être reçu avant de changer le statut
-              </p>
-            )}
-          </section>
+          {/* ── ✅ Changer le statut — hidden if delivered ── */}
+          {isDelivered ? (
+            <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/30 rounded-lg text-sm">
+              <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-success">Commande livrée</p>
+                <p className="text-xs text-muted-foreground">
+                  Cette commande est finalisée. Aucune modification n'est possible.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <section className="space-y-1">
+              <Label>Changer le statut</Label>
+              <Select
+                disabled={!isVerified}
+                value={statut}
+                onValueChange={change}>
+                <SelectTrigger
+                  className={cn(
+                    'mt-1',
+                    !isVerified && 'opacity-50 cursor-not-allowed'
+                  )}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING_CONFIRMATION">En attente</SelectItem>
+                  <SelectItem value="CONFIRMED">Confirmée</SelectItem>
+                  <SelectItem value="IN_PRODUCTION">En production</SelectItem>
+                  <SelectItem value="READY">Prête</SelectItem>
+                  <SelectItem
+                    value="DELIVERED"
+                    disabled={!isFullyPaid}
+                    className={cn(!isFullyPaid && 'opacity-40 cursor-not-allowed')}
+                  >
+                    Livrée {!isFullyPaid && '(paiement requis)'}
+                  </SelectItem>
+                  <SelectItem value="CANCELLED">Annulée</SelectItem>
+                </SelectContent>
+              </Select>
+              {!isVerified && (
+                <p className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Un acompte doit être reçu avant de changer le statut
+                </p>
+              )}
+              {isVerified && !isFullyPaid && (
+                <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Solde restant : {formatFCFA(reste)} — réglez d'abord le paiement pour marquer comme livrée.
+                </p>
+              )}
+            </section>
+          )}
+
 
           {/* ── Notes internes ── */}
           <section>
@@ -555,19 +593,29 @@ export default function CommandeDetailSheet({
           {/* ── Action buttons ── */}
           <div className="space-y-2">
 
-            {/* ✅ Quick transition button — disabled if not verified */}
+            {/* ✅ Quick transition button — hidden when delivered/cancelled */}
             {transition &&
-              commande.status !== 'CANCELLED' && (
+              commande.status !== 'CANCELLED' &&
+              !isDelivered && (
                 <Button
                   onClick={() => change(transition.next)}
-                  disabled={statutMutation.isPending || !isVerified}
+                  disabled={
+                    statutMutation.isPending ||
+                    !isVerified ||
+                    (transition.next === 'DELIVERED' && !isFullyPaid)
+                  }
                   className={cn(
                     'w-full',
-                    !isVerified && 'opacity-50 cursor-not-allowed'
+                    (!isVerified || (transition.next === 'DELIVERED' && !isFullyPaid)) &&
+                      'opacity-50 cursor-not-allowed'
                   )}>
                   {transition.label}
+                  {transition.next === 'DELIVERED' && !isFullyPaid && (
+                    <span className="ml-2 text-xs opacity-70">(paiement requis)</span>
+                  )}
                 </Button>
               )}
+
 
             {/* ✅ Payment button — 3 states */}
             {!paymentOpen && (

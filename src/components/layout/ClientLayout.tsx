@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { Home, CakeSlice, ClipboardList, User, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { connectWebSocket, disconnectWebSocket } from '@/lib/websocket';
 import NotificationBell from '@/components/client/NotificationBell';
+import PhoneNumberModal from '@/components/client/PhoneNumberModal';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -35,6 +36,18 @@ export default function ClientLayout() {
   const cartCount = useCartStore((s) => s.getCount());
   const location = useLocation();
   const qc = useQueryClient();
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role === 'ROLE_CLIENT') {
+      const hasPhone = !!(user.telephone && user.telephone.trim().length > 0);
+      if (!hasPhone) {
+        const t = setTimeout(() => setShowPhoneModal(true), 800);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [user]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -137,6 +150,8 @@ export default function ClientLayout() {
           })}
         </div>
       </nav>
+
+      <PhoneNumberModal open={showPhoneModal} onOpenChange={setShowPhoneModal} />
     </div>
   );
 }

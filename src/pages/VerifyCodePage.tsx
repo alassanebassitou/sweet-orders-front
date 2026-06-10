@@ -1,12 +1,12 @@
-import { CakeSlice, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { authService } from '@/lib/services';
 import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
+import { cn } from '@/lib/utils';
 
 export default function VerifyCodePage() {
   const navigate = useNavigate();
@@ -16,28 +16,28 @@ export default function VerifyCodePage() {
   const clearCart = useCartStore((s) => s.clear);
 
   const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [resendCountdown, setResendCountdown] = useState(60);
+
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    if (resendCountdown <= 0) return;
+    const t = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [countdown]);
+  }, [resendCountdown]);
 
   useEffect(() => {
     if (!email) navigate('/login');
+    else inputRefs.current[0]?.focus();
   }, [email, navigate]);
 
-  const verify = async () => {
-    if (code.length !== 6) {
-      toast.error('Entrez les 6 chiffres');
-      return;
-    }
+  const handleVerify = async (codeToVerify: string) => {
+    if (verifying) return;
+    setVerifying(true);
     try {
-      setLoading(true);
-      const data = await authService.verifyCode(email, code);
+      const data = await authService.verifyCode(email, codeToVerify);
       const u = data.sessionUser || data.user || data;
       const sid = data.sessionId || data.sid;
       if (!sid || !u) throw new Error('Réponse invalide');
@@ -56,21 +56,56 @@ export default function VerifyCodePage() {
       };
       clearCart();
       setAuth(user, sid);
+      toast.success('Connexion réussie !');
       navigate(user.role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/app/home');
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      if (msg) toast.error(msg);
-    } finally {
-      setLoading(false);
+      const msg = err?.response?.data?.message || 'Code incorrect ou expiré';
+      toast.error(msg);
+      setCode('');
+      setVerifying(false);
+      setTimeout(() => inputRefs.current[0]?.focus(), 0);
     }
   };
 
-  const resend = async () => {
+  // Auto-trigger when 6 digits entered
+  useEffect(() => {
+    if (code.length === 6 && !verifying) {
+      handleVerify(code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
+
+  const handleDigitChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const arr = code.split('');
+    while (arr.length < 6) arr.push('');
+    arr[index] = digit;
+    const joined = arr.join('').slice(0, 6);
+    setCode(joined);
+    if (digit && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    setCode(pasted);
+    const lastIndex = Math.min(pasted.length, 6) - 1;
+    inputRefs.current[lastIndex]?.focus();
+  };
+
+  const handleResend = async () => {
     try {
       setResending(true);
       await authService.sendCode(email);
       toast.success('Code renvoyé');
-      setCountdown(60);
+      setResendCountdown(60);
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       if (msg) toast.error(msg);
@@ -84,11 +119,7 @@ export default function VerifyCodePage() {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-6">
           <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <img
-                src="/favicon.ico"
-                alt="Sweet Orders"
-                className="w-8 h-8 object-contain"
-              />
+            <img src="/favicon.ico" alt="Sweet Orders" className="w-8 h-8 object-contain" />
           </div>
           <h1 className="font-display text-2xl font-bold">Vérification</h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -98,29 +129,45 @@ export default function VerifyCodePage() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-lg border border-border p-6 space-y-5">
-          <div className="flex justify-center">
-            <InputOTP maxLength={6} value={code} onChange={setCode}>
-              <InputOTPGroup>
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <InputOTPSlot key={i} index={i} />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
+          <div className="flex gap-2 justify-center my-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <input
+                key={i}
+                ref={(el) => { inputRefs.current[i] = el; }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={code[i] || ''}
+                onChange={(e) => handleDigitChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                disabled={verifying}
+                className={cn(
+                  'w-12 h-14 text-center text-xl font-bold',
+                  'border-2 rounded-xl transition-all',
+                  'focus:border-primary focus:outline-none',
+                  code[i] ? 'border-primary bg-primary/5' : 'border-border bg-card',
+                  verifying && 'opacity-50 cursor-not-allowed'
+                )}
+              />
+            ))}
           </div>
 
-          <Button onClick={verify} className="w-full" disabled={loading || code.length !== 6}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Vérifier le code
-          </Button>
+          {verifying && (
+            <div className="flex items-center justify-center gap-2 text-primary text-sm py-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Vérification en cours...
+            </div>
+          )}
 
           <div className="text-center text-sm">
-            {countdown > 0 ? (
+            {resendCountdown > 0 ? (
               <span className="text-muted-foreground">
-                Renvoyer le code dans {countdown}s
+                Renvoyer le code dans {resendCountdown}s
               </span>
             ) : (
               <button
-                onClick={resend}
+                onClick={handleResend}
                 disabled={resending}
                 className="text-primary font-medium hover:underline disabled:opacity-50"
               >
