@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate, NavLink } from 'react-router-dom';
 import { Home, CakeSlice, ClipboardList, User, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCartStore } from '@/stores/cartStore';
 import { connectWebSocket, disconnectWebSocket } from '@/lib/websocket';
 import NotificationBell from '@/components/client/NotificationBell';
+import PhoneNumberModal from '@/components/client/PhoneNumberModal';
 import { cn } from '@/lib/utils';
 
 const tabs = [
