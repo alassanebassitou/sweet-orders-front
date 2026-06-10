@@ -58,22 +58,19 @@ export default function ClientCommander() {
   );
 
   const allQuartiers = useMemo(() => {
+    let zones = (allZones as any[]).filter((z) => z.actif !== false);    
+    // OPTIONAL: If a city IS selected, narrow down the neighborhoods. 
+    // If NO city is selected, it keeps all neighborhoods across all cities.
+    if (ville) {
+      zones = zones.filter((z) => z.name.toLowerCase() === ville.toLowerCase());
+    }
+    // Extract just the neighborhood names, remove duplicates, and sort alphabetically
+    const neighborhoodNames = zones
+      .map((z) => z.neighborhood)
+      .filter(Boolean); // removes null/undefined values if any exist
 
-  let zones = (allZones as any[]).filter((z) => z.actif !== false);
-  
-  // OPTIONAL: If a city IS selected, narrow down the neighborhoods. 
-  // If NO city is selected, it keeps all neighborhoods across all cities.
-  if (ville) {
-    zones = zones.filter((z) => z.name.toLowerCase() === ville.toLowerCase());
-  }
-
-  // Extract just the neighborhood names, remove duplicates, and sort alphabetically
-  const neighborhoodNames = zones
-    .map((z) => z.neighborhood)
-    .filter(Boolean); // removes null/undefined values if any exist
-
-  return [...new Set(neighborhoodNames)].sort();
-}, [allZones, ville]);
+    return [...new Set(neighborhoodNames)].sort();
+  }, [allZones, ville]);
 
   const filteredVilles = useMemo(
     () => villeInput.length === 0
@@ -166,7 +163,7 @@ export default function ClientCommander() {
     if (!createdCommande) return;
     clear();
     payWithKkiapay({
-      amount: createdCommande.acompteRequis ?? acompteRequis,
+      amount: createdCommande.requireAccount ?? acompteRequis,
       commandeId: createdCommande.id,
       clientInfo: {
         telephone: user?.telephone,

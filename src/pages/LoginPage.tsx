@@ -81,7 +81,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <CakeSlice className="w-10 h-10 text-primary" />
+            <img
+                src="/favicon.ico"
+                alt="Sweet Orders"
+                className="w-8 h-8 object-contain"
+              />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">Sweet Orders</h1>
           <p className="text-muted-foreground">Connectez-vous pour commander</p>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CakeSlice, MapPin, Phone, Mail, MessageCircle, Loader2 } from 'lucide-react';
+import { MapPin, Phone, Mail, MessageCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -61,7 +61,11 @@ export default function ContactPage() {
             className="flex items-center gap-2"
           >
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-              <CakeSlice className="w-5 h-5 text-primary-foreground" />
+              <img
+                src="/favicon.ico"
+                alt="Sweet Orders"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <span className="font-display text-lg font-semibold">Sweet Orders</span>
           </button>
@@ -177,7 +181,11 @@ export default function ContactPage() {
       <footer className="border-t border-border bg-card mt-12">
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-wrap justify-between gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <CakeSlice className="w-5 h-5 text-primary" />
+            <img
+                src="/favicon.ico"
+                alt="Sweet Orders"
+                className="w-8 h-8 object-contain"
+              />
             <span className="font-display font-semibold">Sweet Orders</span>
           </div>
           <button onClick={() => navigate('/')} className="text-muted-foreground hover:text-primary">

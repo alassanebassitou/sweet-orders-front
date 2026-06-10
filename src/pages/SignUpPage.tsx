@@ -49,7 +49,11 @@ export default function SignUpPage() {
       <div className="w-full max-w-md animate-fade-in">
         <div className="text-center mb-6">
           <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-            <CakeSlice className="w-8 h-8 text-primary" />
+            <img
+                src="/favicon.ico"
+                alt="Sweet Orders"
+                className="w-8 h-8 object-contain"
+              />
           </div>
           <h1 className="font-display text-2xl font-bold">Créer un compte</h1>
           <p className="text-sm text-muted-foreground">Rejoignez Sweet Orders</p>

@@ -224,9 +224,9 @@ export default function ClientCommandeDetail() {
                   <div>
                     <p className="text-sm font-medium">{typeLabel}</p>
                     <p className="text-xs text-muted-foreground">
-                      {inv.numero} — {new Date(inv.dateEmission).toLocaleDateString('fr-FR')}
+                      {inv.numero} — {new Date(inv.submitDate).toLocaleDateString('fr-FR')}
                     </p>
-                    <p className="text-xs font-semibold text-primary">{formatFCFA(inv.montantFacture)}</p>
+                    <p className="text-xs font-semibold text-primary">{formatFCFA(inv.invoiceAmount)}</p>
                   </div>
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => invoiceService.downloadPdf(inv.id)}>
                     <Download className="w-3.5 h-3.5" />
@@ -242,10 +242,10 @@ export default function ClientCommandeDetail() {
 
 
       {(() => {
-        const fraisLivraison = cmd.fraisLivraison || 0;
-        const fraisNonDefini = !!cmd.fraisLivraisonNonDefini && fraisLivraison === 0;
-        const fraisDefiniNonPaye = fraisLivraison > 0 && cmd.fraisLivraisonPaye === false;
-        const fraisPaye = fraisLivraison > 0 && cmd.fraisLivraisonPaye === true;
+        const fraisLivraison = cmd.deliveryFees || 0;
+        const fraisNonDefini = !!cmd.isDeliveryFeesApplied && fraisLivraison === 0;
+        const fraisDefiniNonPaye = fraisLivraison > 0 && cmd.isDeliveryFeesPayed === false;
+        const fraisPaye = fraisLivraison > 0 && cmd.isDeliveryFeesPayed === true;
         return (
           <>
             {fraisDefiniNonPaye && (
@@ -255,7 +255,7 @@ export default function ClientCommandeDetail() {
                     <Truck className="w-4 h-4 text-primary" /> Frais de livraison à régler
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Les frais pour votre quartier <strong className="text-foreground">{cmd.quartier}</strong> ont été définis :
+                    Les frais pour votre quartier <strong className="text-foreground">{cmd.neighborhood}</strong> ont été définis :
                   </p>
                   <div className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                     <span className="text-sm">Frais de livraison</span>
@@ -289,7 +289,7 @@ export default function ClientCommandeDetail() {
                     <Clock className="w-4 h-4" /> Frais de livraison en attente
                   </p>
                   <p className="text-xs text-amber-800 leading-relaxed">
-                    Votre quartier <strong>{cmd.quartier}</strong> n'est pas encore répertorié.
+                    Votre quartier <strong>{cmd.neighborhood}</strong> n'est pas encore répertorié.
                     Le service administratif vous contactera. Vous recevrez une notification et un email dès que les frais seront définis.
                   </p>
                 </CardContent>
