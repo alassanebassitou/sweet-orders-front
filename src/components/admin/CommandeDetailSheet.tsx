@@ -49,6 +49,8 @@ export default function CommandeDetailSheet({
   const isFullyPaid = reste <= 0;
   const st = statutColors[commande.status];
   const transition = transitions[commande.statut];
+  const isDelivered = commande.status === 'DELIVERED' || commande.statut === 'DELIVERED';
+
 
   // ✅ NEW — verify if order has received at least one payment
   const { data: isVerified = false, isLoading: verifying } = useQuery({
