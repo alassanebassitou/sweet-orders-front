@@ -150,6 +150,8 @@ export default function ClientLayout() {
           })}
         </div>
       </nav>
+
+      <PhoneNumberModal open={showPhoneModal} onOpenChange={setShowPhoneModal} />
     </div>
   );
 }
