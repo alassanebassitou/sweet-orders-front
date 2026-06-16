@@ -98,7 +98,7 @@ export default function AdminLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-foreground/40" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl flex flex-col">
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card shadow-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <img
@@ -110,7 +110,7 @@ export default function AdminLayout() {
               </div>
               <button onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
             </div>
-            <nav className="flex-1 py-4 px-3 space-y-1">
+            <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
               {navItems.map((item) => (
                 <button
                   key={item.path}
@@ -125,11 +125,36 @@ export default function AdminLayout() {
                 </button>
               ))}
             </nav>
+            {/* ✅ Mobile footer — user info + logout */}
+            <div className="border-t border-border p-4 shrink-0">
+              <div className="flex items-center gap-3 mb-3">
+                {user?.photoUrl ? (
+                  <img src={user.photoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                    {user?.nom?.charAt(0)?.toUpperCase() || 'A'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.nom || 'Admin'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { handleLogout(); setSidebarOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm
+                           text-muted-foreground hover:text-destructive hover:bg-destructive/10
+                           transition-colors"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                Déconnexion
+              </button>
+            </div>
           </aside>
         </div>
       )}
 
-      <main className="flex-1 flex flex-col min-h-0">
+      <main className="flex-1 flex flex-col min-h-0 overflow-x-hidden">
         <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-card">
           <button className="md:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
@@ -150,7 +175,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto pb-20 md:pb-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20 md:pb-6">
           <Outlet />
         </div>
       </main>

@@ -53,12 +53,14 @@ export default function FinancesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-display text-2xl font-bold">Finances</h1>
-          <p className="text-muted-foreground text-sm">Vue d'ensemble financière</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold">Finances</h1>
+          <p className="text-sm text-muted-foreground">Vue d'ensemble financière</p>
         </div>
-        <Button variant="outline" onClick={() => financeService.exportCSV()} className="gap-2"><Download className="w-4 h-4" /> Exporter CSV</Button>
+        <Button variant="outline" size="sm" onClick={() => financeService.exportCSV()} className="gap-2 self-start sm:self-auto w-full sm:w-auto">
+          <Download className="w-4 h-4" /> Exporter CSV
+        </Button>
       </div>
 
       <Tabs defaultValue="dashboard">
@@ -141,17 +143,17 @@ export default function FinancesPage() {
         </TabsContent>
 
         <TabsContent value="depenses" className="space-y-3 pt-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
               <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Toutes catégories</SelectItem>
                   {CATEGORIES_DEPENSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={linkFilter} onValueChange={(v) => setLinkFilter(v as any)}>
-                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Toutes</SelectItem>
                   <SelectItem value="LIEES">Liées à une commande</SelectItem>
@@ -159,7 +161,7 @@ export default function FinancesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => setOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Nouvelle dépense</Button>
+            <Button onClick={() => setOpen(true)} className="w-full sm:w-auto gap-2"><Plus className="w-4 h-4" /> Nouvelle dépense</Button>
           </div>
           <Card><CardContent className="p-0">
             {depQ.isLoading ? <LoadingState /> :

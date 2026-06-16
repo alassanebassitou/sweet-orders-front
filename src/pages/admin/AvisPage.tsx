@@ -51,8 +51,8 @@ export default function AvisPage() {
         <p className="text-muted-foreground text-sm">{(avis as any[]).length} avis au total</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex gap-2 flex-wrap">
           {filterBtn('all', 'Tous')}
           {filterBtn('visible', 'Visibles')}
           {filterBtn('hidden', 'Masqués')}
@@ -60,7 +60,7 @@ export default function AvisPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as Sort)}
-          className="ml-auto text-xs rounded-md border border-border bg-card px-3 py-1.5"
+          className="sm:ml-auto text-xs rounded-md border border-border bg-card px-3 py-1.5 self-start"
         >
           <option value="recent">Plus récents</option>
           <option value="note_desc">Note ↓</option>

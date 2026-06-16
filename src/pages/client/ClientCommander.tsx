@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Minus, Plus, Trash2, ShoppingCart, CheckCircle2, MapPin, Home, Truck, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Minus, Plus, Trash2, ShoppingCart, CheckCircle2, MapPin, Home, Truck, AlertTriangle, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,7 +31,7 @@ export default function ClientCommander() {
   const [dateLivraison, setDateLivraison] = useState('');
   const [creneau, setCreneau] = useState('matin');
   const [mode, setMode] = useState<'HOME_DELIVERY' | 'COLLECTION_ON_SITE'>('HOME_DELIVERY');
-  const [adresse, setAdresse] = useState(user?.adresse || '');
+  const [adresse, setAdresse] = useState(user?.address || '');
   const [instructions, setInstructions] = useState('');
   const [createdCommande, setCreatedCommande] = useState<any>(null);
 
@@ -57,20 +57,14 @@ export default function ClientCommander() {
     [allZones],
   );
 
-  const allQuartiers = useMemo(() => {
-    let zones = (allZones as any[]).filter((z) => z.actif !== false);    
-    // OPTIONAL: If a city IS selected, narrow down the neighborhoods. 
-    // If NO city is selected, it keeps all neighborhoods across all cities.
-    if (ville) {
-      zones = zones.filter((z) => z.name.toLowerCase() === ville.toLowerCase());
-    }
-    // Extract just the neighborhood names, remove duplicates, and sort alphabetically
-    const neighborhoodNames = zones
-      .map((z) => z.neighborhood)
-      .filter(Boolean); // removes null/undefined values if any exist
-
-    return [...new Set(neighborhoodNames)].sort();
-  }, [allZones, ville]);
+  const quartiersForVille = useMemo(
+  () => ville
+    ? (allZones as any[]).filter(
+        (z) => z.name.toLowerCase() === ville.toLowerCase() && z.actif !== false
+      )
+    : [],
+  [allZones, ville],
+);
 
   const filteredVilles = useMemo(
     () => villeInput.length === 0
@@ -80,10 +74,12 @@ export default function ClientCommander() {
   );
 
   const filteredQuartiers = useMemo(
-    () => quartierInput.length === 0
-      ? allQuartiers
-      : allQuartiers.filter((z: any) => z.neighborhood?.toLowerCase().startsWith(quartierInput.toLowerCase())),
-    [allQuartiers, quartierInput],
+  () => quartierInput.length === 0
+    ? quartiersForVille
+    : quartiersForVille.filter((z: any) =>
+        z.neighborhood?.toLowerCase().startsWith(quartierInput.toLowerCase())
+      ),
+  [quartiersForVille, quartierInput],
   );
 
   const totalProduits = total;
@@ -514,18 +510,94 @@ export default function ClientCommander() {
 
           {/* STEP 4 — Confirmation */}
           {step === 4 && (
-            <div className="text-center py-8 space-y-4">
+            <div className="text-center py-8 space-y-6">
               <CheckCircle2 className="w-20 h-20 mx-auto text-success" />
               <div>
-                <h2 className="font-display text-2xl font-bold">Commande {createdCommande?.numero} envoyée !</h2>
-                <p className="text-muted-foreground mt-1">L'acompte de {formatFCFA(createdCommande?.acompteRequis ?? acompteRequis)} est requis pour confirmer.</p>
+                <h2 className="font-display text-2xl font-bold">
+                  Commande {createdCommande?.numero} envoyée !
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  Choisissez comment régler votre commande.
+                </p>
               </div>
-              <div className="flex flex-col gap-2 max-w-sm mx-auto">
-                <Button onClick={handlePayAcompte}>Payer l'acompte maintenant</Button>
-                <Button variant="outline" onClick={() => { clear(); navigate('/app/commandes'); }}>Payer plus tard</Button>
-              </div>
+
+              <div className="max-w-sm mx-auto space-y-3 text-left">
+
+                {/* Option 1 — Acompte only */}
+                <button
+                  onClick={() => {
+                    if (!createdCommande) return;
+                    const acompte = createdCommande?.requireAccount ?? acompteRequis;
+                    clear();
+                    payWithKkiapay({
+                      amount: acompte,
+                      commandeId: createdCommande.id,
+                      clientInfo: {
+                        telephone: user?.telephone,
+                        name: `${user?.lastname || ''} ${user?.firstname || ''}`.trim(),
+                        email: user?.email || '',
+                      },
+                      type: 'ACOMPTE',
+                      });
+                }}
+                className="w-full p-4 rounded-xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors text-left space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    Payer l'acompte ({pourcentageAcompte}%)
+                  </span>
+                  <span className="font-bold text-primary">
+                    {formatFCFA(createdCommande?.requireAccount ?? acompteRequis)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Minimum requis pour confirmer votre commande. Le solde sera réglé à la livraison.
+                </p>
+              </button>
+
+              {/* Option 2 — Full payment */}
+              <button
+                onClick={() => {
+                  if (!createdCommande) return;
+                  clear();
+                  payWithKkiapay({
+                    amount: totalCommande,
+                    commandeId: createdCommande.id,
+                    clientInfo: {
+                      telephone: user?.telephone,
+                      name: `${user?.lastname || ''} ${user?.firstname || ''}`.trim(),
+                      email: user?.email || '',
+                    },
+                    type: 'SOLDE',
+                  });
+                }}
+                className="w-full p-4 rounded-xl border-2 border-border hover:border-primary/40 hover:bg-secondary/50 transition-colors text-left space-y-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    Payer le montant total
+                  </span>
+                  <span className="font-bold">
+                    {formatFCFA(totalCommande)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Réglez l'intégralité maintenant — aucun solde restant à la livraison.
+                </p>
+              </button>
+
+              {/* Option 3 — Pay later */}
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => { clear(); navigate('/app/commandes'); }}
+              >
+                Payer plus tard
+              </Button>
             </div>
-          )}
+          </div>
+        )}
         </CardContent>
       </Card>
 

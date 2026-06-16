@@ -7,12 +7,11 @@ export interface User {
   id?: string;
   userId?: string;
   email: string;
-  name?: string;
-  nom?: string;
-  prenom?: string;
+  lastname?: string;
+  firstname?: string;
   telephone?: string;
-  adresse?: string;
-  ville?: string;
+  address?: string;
+  city?: string;
   role: Role;
   photoUrl?: string;
   isActif?: boolean;

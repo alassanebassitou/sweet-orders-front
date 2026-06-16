@@ -70,34 +70,34 @@ export default function ParametresPage() {
   const zones = (zonesQ.data || []) as DeliveryZone[];
 
   return (
-    <div className="p-4 md:p-6 space-y-4 animate-fade-in">
+    <div className="p-4 md:p-6 space-y-4 animate-fade-in max-w-full overflow-hidden">
       <div>
         <h1 className="font-display text-2xl font-bold">Paramètres</h1>
         <p className="text-muted-foreground text-sm">Configuration de la pâtisserie</p>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader><CardTitle className="text-base">Pâtisserie</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div><Label>Nom</Label><Input value={params.namePatisserie || ''} onChange={(e) => setParams({ ...params, namePatisserie: e.target.value })} className="mt-1" /></div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div><Label>Téléphone WhatsApp</Label><Input value={params.whatsappPhoneNumber || ''} onChange={(e) => setParams({ ...params, whatsappPhoneNumber: e.target.value })} className="mt-1" /></div>
-            <div><Label>Email</Label><Input value={params.email || ''} onChange={(e) => setParams({ ...params, email: e.target.value })} className="mt-1" /></div>
+          <div className="w-full"><Label>Nom</Label><Input value={params.namePatisserie || ''} onChange={(e) => setParams({ ...params, namePatisserie: e.target.value })} className="mt-1 w-full" /></div>
+          <div className="grid sm:grid-cols-2 gap-3 w-full">
+            <div className="w-full"><Label>Téléphone WhatsApp</Label><Input value={params.whatsappPhoneNumber || ''} onChange={(e) => setParams({ ...params, whatsappPhoneNumber: e.target.value })} className="mt-1 w-full" /></div>
+            <div className="w-full"><Label>Email</Label><Input value={params.email || ''} onChange={(e) => setParams({ ...params, email: e.target.value })} className="mt-1 w-full" /></div>
           </div>
-          <div><Label>Adresse</Label><Input value={params.address || ''} onChange={(e) => setParams({ ...params, address: e.target.value })} className="mt-1" /></div>
+          <div className="w-full"><Label>Adresse</Label><Input value={params.address || ''} onChange={(e) => setParams({ ...params, address: e.target.value })} className="mt-1 w-full" /></div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader><CardTitle className="text-base">Configuration commandes</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-3 gap-3">
-          <div><Label>Délai min. (heures)</Label><Input type="number" value={params.minimumDelayHour || 0} onChange={(e) => setParams({ ...params, minimumDelayHour: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
-          <div><Label>Acompte (%)</Label><Input type="number" value={params.depositPercentage || 0} onChange={(e) => setParams({ ...params, depositPercentage: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
-          <div><Label>Seuil surcharge / jour</Label><Input type="number" value={params.productionOverloadThreshold || 0} onChange={(e) => setParams({ ...params, productionOverloadThreshold: parseInt(e.target.value || '0', 10) })} className="mt-1" /></div>
+        <CardContent className="grid sm:grid-cols-3 gap-3 w-full">
+          <div className="w-full"><Label>Délai min. (heures)</Label><Input type="number" value={params.minimumDelayHour || 0} onChange={(e) => setParams({ ...params, minimumDelayHour: parseInt(e.target.value || '0', 10) })} className="mt-1 w-full" /></div>
+          <div className="w-full"><Label>Acompte (%)</Label><Input type="number" value={params.depositPercentage || 0} onChange={(e) => setParams({ ...params, depositPercentage: parseInt(e.target.value || '0', 10) })} className="mt-1 w-full" /></div>
+          <div className="w-full"><Label>Seuil surcharge / jour</Label><Input type="number" value={params.productionOverloadThreshold || 0} onChange={(e) => setParams({ ...params, productionOverloadThreshold: parseInt(e.target.value || '0', 10) })} className="mt-1 w-full" /></div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Zones de livraison</CardTitle>
           <Button size="sm" onClick={openNewZone} className="gap-1"><Plus className="w-4 h-4" /> Nouvelle zone</Button>
@@ -152,7 +152,7 @@ export default function ParametresPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageCircle className="w-4 h-4 text-primary" /> Templates WhatsApp</CardTitle></CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-3">

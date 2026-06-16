@@ -126,7 +126,7 @@ export default function ClientLayout() {
         </div>
       </header>
 
-      <main className="flex-1 pb-20 md:pb-8">
+      <main className="flex-1 pb-20 md:pb-8 overflow-x-hidden">
         <div className="max-w-5xl mx-auto">
           <Outlet />
         </div>

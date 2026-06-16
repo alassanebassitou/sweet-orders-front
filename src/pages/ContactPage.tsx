@@ -21,11 +21,8 @@ export default function ContactPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const adresse = (settings as any)?.adresse || (settings as any)?.address || '—';
-  const telephone =
-    (settings as any)?.telephoneWhatsapp ||
-    (settings as any)?.whatsappPhoneNumber ||
-    '';
+  const adresse = (settings as any)?.address || '—';
+  const telephone = (settings as any)?.whatsappPhoneNumber || '—';
   const email = (settings as any)?.email || '—';
 
   const handleWhatsApp = () => {

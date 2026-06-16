@@ -33,15 +33,16 @@ export default function LoginPage() {
         id: u.userId || u.id,
         userId: u.userId,
         email: u.email,
-        nom: u.name || u.nom,
-        prenom: u.prenom,
+        lastname: u.lastname || u.nom,
+        firstname: u.firstname || u.prenom,
         role: u.role,
         photoUrl: u.photoUrl,
         telephone: u.telephone,
-        adresse: u.adresse,
-        ville: u.ville,
+        address: u.address,
+        city: u.city,
         isActif: u.isActif,
       };
+      console.log("Google login success, user:", user);
       setAuth(user, sid);
       navigate(user.role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/app/home');
     } catch (err: any) {

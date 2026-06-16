@@ -21,11 +21,11 @@ export default function ClientProfil() {
   const navigate = useNavigate();
   const { user, updateUser, logout } = useAuthStore();
 
-  const [prenom, setPrenom] = useState(user?.prenom || '');
-  const [nom, setNom] = useState(user?.nom || '');
+  const [prenom, setPrenom] = useState(user?.firstname || '');
+  const [nom, setNom] = useState(user?.lastname || '');
   const [telephone, setTelephone] = useState(user?.telephone || '');
-  const [adresse, setAdresse] = useState(user?.adresse || '');
-  const [ville, setVille] = useState(user?.ville || '');
+  const [adresse, setAdresse] = useState(user?.address || '');
+  const [ville, setVille] = useState(user?.city || '');
 
   const { data: commandes = [] } = useQuery({
     queryKey: ['mes-commandes'],
@@ -43,13 +43,13 @@ export default function ClientProfil() {
   const updateMutation = useMutation({
     mutationFn: (payload: any) => userService.updateMe(payload),
     onSuccess: (data) => {
-      updateUser(data || { prenom, nom, telephone, adresse, ville });
+      updateUser(data || { firstname: prenom, lastname: nom, telephone, address: adresse, city: ville });
       toast.success('Profil mis à jour');
     },
     onError: () => toast.error('Erreur lors de la mise à jour'),
   });
 
-  const save = () => updateMutation.mutate({ prenom, nom, telephone, adresse, ville });
+  const save = () => updateMutation.mutate({ firstname: prenom, lastname: nom, telephone, address: adresse, city: ville });
 
   const doLogout = async () => {
     try { await authService.logout(); } finally {
@@ -65,10 +65,10 @@ export default function ClientProfil() {
           <img src={user.photoUrl} alt="" className="mx-auto w-20 h-20 rounded-full" />
         ) : (
           <div className="mx-auto w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center text-2xl font-bold text-primary">
-            {(user?.prenom?.[0] || user?.nom?.[0] || 'C')}
+            {(user?.firstname?.[0] || user?.lastname?.[0] || 'C')}
           </div>
         )}
-        <h1 className="font-display text-2xl font-bold mt-3">{user?.prenom} {user?.nom}</h1>
+        <h1 className="font-display text-2xl font-bold mt-3">{user?.firstname} {user?.lastname}</h1>
         <p className="text-sm text-muted-foreground">{user?.email}</p>
       </div>
 

@@ -35,11 +35,8 @@ export default function CommandeDetailSheet({
   onUpdated,
 }: Props) {
   const qc = useQueryClient();
-  const [notes, setNotes] = useState(commande.notesInternes || '');
-  const [statut, setStatut] = useState(commande.statut);
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState<string>('');
-  const [paymentMode, setPaymentMode] = useState('CASH');
+  const [notes, setNotes] = useState(commande.internalNote || '');
+  const [statut, setStatut] = useState(commande.status);
   const [depenseOpen, setDepenseOpen] = useState(false);
   const [deliveryFeeInput, setDeliveryFeeInput] = useState('');
 
@@ -48,16 +45,8 @@ export default function CommandeDetailSheet({
   const reste = total - totalPaye;
   const isFullyPaid = reste <= 0;
   const st = statutColors[commande.status];
-  const transition = transitions[commande.statut];
-  const isDelivered = commande.status === 'DELIVERED' || commande.statut === 'DELIVERED';
-
-
-  // ✅ NEW — verify if order has received at least one payment
-  const { data: isVerified = false, isLoading: verifying } = useQuery({
-    queryKey: ['payment-verified', commande.id],
-    queryFn: () => paiementService.verifyPayment(commande.id),
-    enabled: !!commande.id,
-  });
+  const transition = transitions[commande.status];
+  const isDelivered = commande.status === 'DELIVERED';
 
   const depensesQ = useQuery({
     queryKey: ['depenses-commande', commande.id],
@@ -72,6 +61,7 @@ export default function CommandeDetailSheet({
     enabled: !!commande.id,
   });
   const invoices = invoicesQ.data || [];
+
   const resendInvoiceMut = useMutation({
     mutationFn: (id: number) => invoiceService.resend(id),
     onSuccess: () => toast.success('Email de relance envoyé'),
@@ -92,9 +82,12 @@ export default function CommandeDetailSheet({
     nom: (settings as any)?.namePatisserie,
     telephone: (settings as any)?.whatsappPhoneNumber,
   };
+
   const handleSendWhatsApp = () => {
-    handleSendWhatsAppFull(commande, templates as any[], patisserie, isVerified, isFullyPaid);
+    // isVerified replaced by isFullyPaid check only — client pays via the app link
+    handleSendWhatsAppFull(commande, templates as any[], patisserie, isFullyPaid, isFullyPaid);
   };
+
   const totalDepenses = depenses.reduce(
     (s: number, d: any) => s + (d.amount ?? d.montant ?? 0),
     0
@@ -124,7 +117,7 @@ export default function CommandeDetailSheet({
       const msg = err?.response?.data?.message;
       if (code === 'PAYMENT_REQUIRED') {
         toast.error(
-          msg || 'Veuillez enregistrer le paiement complet avant de marquer comme livrée.',
+          msg || 'Le client doit régler le solde avant que la commande puisse être livrée.',
           { duration: 5000 }
         );
       } else if (code === 'ORDER_ALREADY_DELIVERED') {
@@ -133,28 +126,6 @@ export default function CommandeDetailSheet({
         toast.error(msg || 'Erreur lors du changement de statut');
       }
     },
-  });
-
-
-  const paiementMutation = useMutation({
-    mutationFn: (amount: number) =>
-      paiementService.enregistrer({
-        commandeId: commande.id,
-        amount,
-        paymentMode,
-        paymentType: 'ACOMPTE',
-      }),
-    onSuccess: () => {
-      toast.success('Paiement enregistré');
-      setPaymentOpen(false);
-      setPaymentAmount('');
-      // ✅ Invalidate payment verification + commande data
-      qc.invalidateQueries({ queryKey: ['payment-verified', commande.id] });
-      qc.invalidateQueries({ queryKey: ['commandes'] });
-      qc.invalidateQueries({ queryKey: ['commande', commande.id] });
-      onUpdated?.();
-    },
-    onError: () => toast.error("Erreur lors de l'enregistrement"),
   });
 
   const deleteMut = useMutation({
@@ -174,22 +145,30 @@ export default function CommandeDetailSheet({
   const villeCmd: string | undefined = commande.city;
   const { data: allZonesForThisVille = [] } = useQuery({
     queryKey: ['zones-for-ville', villeCmd],
-    queryFn: () => villeCmd ? zoneService.getQuartiersForVille(villeCmd) : Promise.resolve([]),
+    queryFn: () =>
+      villeCmd
+        ? zoneService.getQuartiersForVille(villeCmd)
+        : Promise.resolve([]),
     enabled: !!villeCmd,
   });
   const fraisManquants =
     !!commande.isDeliveryFeesApplied ||
-    ((commande.deliveryMode === 'HOME_DELIVERY') &&
+    (commande.deliveryMode === 'HOME_DELIVERY' &&
       (!commande.deliveryFees || commande.deliveryFees === 0));
+
   const applyFeeMut = useMutation({
-    mutationFn: ({ commandeId, deliveryFees }: { commandeId: any; deliveryFees: number }) =>
-      zoneService.applyFeeToCommande(commandeId, deliveryFees),
+    mutationFn: ({
+      commandeId,
+      deliveryFees,
+    }: {
+      commandeId: any;
+      deliveryFees: number;
+    }) => zoneService.applyFeeToCommande(commandeId, deliveryFees),
     onSuccess: () => {
       toast.success('Frais appliqués — client notifié par email et notification');
       setDeliveryFeeInput('');
       qc.invalidateQueries({ queryKey: ['commandes'] });
       qc.invalidateQueries({ queryKey: ['commande', commande.id] });
-      qc.invalidateQueries({ queryKey: ['payment-verified', commande.id] });
       onUpdated?.();
     },
     onError: () => toast.error("Erreur lors de l'application des frais"),
@@ -197,40 +176,41 @@ export default function CommandeDetailSheet({
 
   return (
     <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-foreground/40" onClick={onClose} />
       <div
-        className="absolute inset-0 bg-foreground/40"
-        onClick={onClose}
-      />
-      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md
-                      bg-card shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-card z-10 flex items-center
-                        justify-between p-4 border-b border-border">
+        className="absolute right-0 top-0 bottom-0 w-full sm:max-w-md
+                    bg-card shadow-xl overflow-y-auto"
+      >
+        {/* ── Header ── */}
+        <div
+          className="sticky top-0 bg-card z-10 flex items-center
+                      justify-between p-4 border-b border-border"
+        >
           <div>
             <h2 className="font-display text-lg font-semibold">
               {commande.numero}
             </h2>
             <Badge
               variant="secondary"
-              className={`${st?.bg} ${st?.text} text-[10px] mt-1`}>
+              className={`${st?.bg} ${st?.text} text-[10px] mt-1`}
+            >
               {st?.label}
             </Badge>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-secondary rounded-lg">
+          <button onClick={onClose} className="p-1 hover:bg-secondary rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4 space-y-5">
 
+          {/* ── Client modified warning ── */}
           {commande.lastModifiedByClient && (
             <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/30 rounded-lg text-xs text-warning">
               <AlertCircle className="w-3.5 h-3.5" />
               Le client a modifié cette commande
             </div>
           )}
-
 
           {/* ── Client ── */}
           <section className="space-y-2">
@@ -239,8 +219,8 @@ export default function CommandeDetailSheet({
             {commande.clientTelephone && (
               <a
                 href={`tel:${commande.clientTelephone}`}
-                className="flex items-center gap-2 text-sm
-                           text-muted-foreground hover:text-primary">
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+              >
                 <Phone className="w-4 h-4" />
                 {commande.clientTelephone}
               </a>
@@ -248,8 +228,8 @@ export default function CommandeDetailSheet({
             {commande.clientEmail && (
               <a
                 href={`mailto:${commande.clientEmail}`}
-                className="flex items-center gap-2 text-sm
-                           text-muted-foreground hover:text-primary">
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+              >
                 <Mail className="w-4 h-4" />
                 {commande.clientEmail}
               </a>
@@ -258,15 +238,11 @@ export default function CommandeDetailSheet({
 
           {/* ── Produits ── */}
           <section>
-            <h3 className="font-display font-semibold text-sm mb-2">
-              Produits
-            </h3>
+            <h3 className="font-display font-semibold text-sm mb-2">Produits</h3>
             <div className="space-y-2">
               {(commande.produits || commande.products || []).map(
                 (p: any, i: number) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-lg bg-secondary/40 text-sm">
+                  <div key={i} className="p-3 rounded-lg bg-secondary/40 text-sm">
                     <div className="flex justify-between">
                       <span className="font-medium">
                         {p.nom || p.productName} ×{p.quantite ?? p.quantity}
@@ -278,15 +254,14 @@ export default function CommandeDetailSheet({
                         Message : "{p.cakeMessage}"
                       </p>
                     )}
-                    {p.customizationJson &&
-                      p.customizationJson.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          +{' '}
-                          {typeof p.customizationJson === 'string'
-                            ? p.customizationJson
-                            : p.customizationJson.join(', ')}
-                        </p>
-                      )}
+                    {p.customizationJson && p.customizationJson.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        +{' '}
+                        {typeof p.customizationJson === 'string'
+                          ? p.customizationJson
+                          : p.customizationJson.join(', ')}
+                      </p>
+                    )}
                   </div>
                 )
               )}
@@ -295,14 +270,11 @@ export default function CommandeDetailSheet({
 
           {/* ── Livraison ── */}
           <section className="space-y-1 text-sm">
-            <h3 className="font-display font-semibold text-sm mb-1">
-              Livraison
-            </h3>
+            <h3 className="font-display font-semibold text-sm mb-1">Livraison</h3>
             <p>
               📅{' '}
               {formatDate(
-                commande.dateLivraisonSouhaitee ||
-                  commande.wishDeliveryDate
+                commande.dateLivraisonSouhaitee || commande.wishDeliveryDate
               )}{' '}
               — {commande.creneauHoraire}
             </p>
@@ -317,7 +289,7 @@ export default function CommandeDetailSheet({
             )}
           </section>
 
-          {/* ── ⚠️ Frais livraison non définis ── */}
+          {/* ── Frais livraison non définis ── */}
           {fraisManquants && (
             <section className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 space-y-3">
               <div className="flex items-center gap-2 text-amber-900">
@@ -325,16 +297,23 @@ export default function CommandeDetailSheet({
                 <p className="font-semibold text-sm">Frais de livraison non définis</p>
               </div>
               <div className="text-xs text-amber-800 space-y-1">
-                <p>🏙️ Ville : <strong>{commande.city || '—'}</strong></p>
-                <p>🏘️ Quartier : <strong>{commande.neighborhood || '—'}</strong></p>
+                <p>
+                  🏙️ Ville : <strong>{commande.city || '—'}</strong>
+                </p>
+                <p>
+                  🏘️ Quartier : <strong>{commande.neighborhood || '—'}</strong>
+                </p>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-amber-900">
                   Appliquer les frais de livraison (FCFA)
                 </Label>
-                {(allZonesForThisVille as any[]).filter((z) => z.deliveryFees > 0).length > 0 && (
+                {(allZonesForThisVille as any[]).filter((z) => z.deliveryFees > 0)
+                  .length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Zones existantes pour {commande.city} :</p>
+                    <p className="text-xs text-muted-foreground">
+                      Zones existantes pour {commande.city} :
+                    </p>
                     <div className="flex flex-wrap gap-1">
                       {(allZonesForThisVille as any[])
                         .filter((z) => z.deliveryFees > 0)
@@ -342,7 +321,9 @@ export default function CommandeDetailSheet({
                           <button
                             key={z.id}
                             type="button"
-                            onClick={() => setDeliveryFeeInput(String(z.deliveryFees))}
+                            onClick={() =>
+                              setDeliveryFeeInput(String(z.deliveryFees))
+                            }
                             className="text-xs px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
                           >
                             {z.neighborhood}: {formatFCFA(z.deliveryFees)}
@@ -367,7 +348,10 @@ export default function CommandeDetailSheet({
                         toast.error('Entrez un montant valide');
                         return;
                       }
-                      applyFeeMut.mutate({ commandeId: commande.id, deliveryFees: Number(deliveryFeeInput) });
+                      applyFeeMut.mutate({
+                        commandeId: commande.id,
+                        deliveryFees: Number(deliveryFeeInput),
+                      });
                     }}
                     disabled={!deliveryFeeInput || applyFeeMut.isPending}
                     className="gap-1"
@@ -376,19 +360,20 @@ export default function CommandeDetailSheet({
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Le client sera notifié par email et in-app avec un lien pour payer ces frais.
+                  Le client sera notifié par email et in-app avec un lien pour
+                  payer ces frais.
                 </p>
               </div>
             </section>
           )}
 
-          {/* ── 💰 Finances ── */}
-          <section className="rounded-lg border border-border p-3
-                               space-y-3 bg-secondary/30">
+          {/* ── Finances ── */}
+          <section className="rounded-lg border border-border p-3 space-y-3 bg-secondary/30">
             <h3 className="font-display font-semibold text-sm">
               💰 Finances de cette commande
             </h3>
 
+            {/* Totals */}
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
                 <span>Montant total</span>
@@ -398,30 +383,29 @@ export default function CommandeDetailSheet({
                 <span>Acompte reçu</span>
                 <span>{formatFCFA(totalPaye)}</span>
               </div>
-              <div className={cn(
-                'flex justify-between font-medium',
-                reste > 0 ? 'text-destructive' : 'text-success'
-              )}>
+              <div
+                className={cn(
+                  'flex justify-between font-medium',
+                  reste > 0 ? 'text-destructive' : 'text-success'
+                )}
+              >
                 <span>Solde restant</span>
                 <span className="font-semibold">{formatFCFA(reste)}</span>
               </div>
 
-              {/* Payment status badge */}
+              {/* Payment status badge — read only, driven by actual payments from client */}
               <div className="pt-2">
-                {verifying ? null : !isVerified ? (
-                  <span className="text-xs px-2 py-1 rounded-full
-                                   bg-amber-100 text-amber-700">
-                    ⚠️ En attente de paiement
-                  </span>
-                ) : isFullyPaid ? (
-                  <span className="text-xs px-2 py-1 rounded-full
-                                   bg-success/10 text-success">
+                {isFullyPaid ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success">
                     ✅ Entièrement payée
                   </span>
+                ) : totalPaye > 0 ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                    🔶 Partiellement payée — solde : {formatFCFA(reste)}
+                  </span>
                 ) : (
-                  <span className="text-xs px-2 py-1 rounded-full
-                                   bg-orange-100 text-orange-700">
-                    🔶 Partiellement payée
+                  <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">
+                    ⚠️ En attente de paiement client
                   </span>
                 )}
               </div>
@@ -431,15 +415,13 @@ export default function CommandeDetailSheet({
             <div className="border-t border-border pt-2 text-sm space-y-1">
               <div className="flex justify-between">
                 <span>Dépenses liées</span>
-                <span className="font-semibold">
-                  {formatFCFA(totalDepenses)}
-                </span>
+                <span className="font-semibold">{formatFCFA(totalDepenses)}</span>
               </div>
               {depenses.map((d: any) => (
                 <div
                   key={d.id}
-                  className="flex justify-between text-xs
-                             text-muted-foreground pl-2">
+                  className="flex justify-between text-xs text-muted-foreground pl-2"
+                >
                   <span>
                     - {d.category || d.categorie} : {d.description}
                   </span>
@@ -447,7 +429,8 @@ export default function CommandeDetailSheet({
                     <span>{formatFCFA(d.amount ?? d.montant ?? 0)}</span>
                     <button
                       onClick={() => removeDepMut.mutate(d.id)}
-                      className="text-destructive p-0.5">
+                      className="text-destructive p-0.5"
+                    >
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
@@ -455,14 +438,11 @@ export default function CommandeDetailSheet({
               ))}
             </div>
 
-            <div className="border-t border-border pt-2 flex
-                            justify-between text-sm font-semibold">
+            {/* Bénéfice net */}
+            <div className="border-t border-border pt-2 flex justify-between text-sm font-semibold">
               <span>Bénéfice net</span>
-              <span className={beneficeNet >= 0
-                ? 'text-success'
-                : 'text-destructive'}>
-                {formatFCFA(beneficeNet)}{' '}
-                {beneficeNet >= 0 ? '📈' : '📉'}
+              <span className={beneficeNet >= 0 ? 'text-success' : 'text-destructive'}>
+                {formatFCFA(beneficeNet)} {beneficeNet >= 0 ? '📈' : '📉'}
               </span>
             </div>
 
@@ -470,12 +450,13 @@ export default function CommandeDetailSheet({
               size="sm"
               variant="outline"
               onClick={() => setDepenseOpen(true)}
-              className="w-full gap-2">
+              className="w-full gap-2"
+            >
               <Plus className="w-4 h-4" /> Ajouter une dépense pour ce gâteau
             </Button>
           </section>
 
-          {/* ── ✅ Changer le statut — hidden if delivered ── */}
+          {/* ── Statut ── */}
           {isDelivered ? (
             <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/30 rounded-lg text-sm">
               <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
@@ -489,15 +470,8 @@ export default function CommandeDetailSheet({
           ) : (
             <section className="space-y-1">
               <Label>Changer le statut</Label>
-              <Select
-                disabled={!isVerified}
-                value={statut}
-                onValueChange={change}>
-                <SelectTrigger
-                  className={cn(
-                    'mt-1',
-                    !isVerified && 'opacity-50 cursor-not-allowed'
-                  )}>
+              <Select value={statut} onValueChange={change}>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -515,21 +489,15 @@ export default function CommandeDetailSheet({
                   <SelectItem value="CANCELLED">Annulée</SelectItem>
                 </SelectContent>
               </Select>
-              {!isVerified && (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  Un acompte doit être reçu avant de changer le statut
-                </p>
-              )}
-              {isVerified && !isFullyPaid && (
+              {/* Only guard remaining: full payment required for DELIVERED */}
+              {!isFullyPaid && (
                 <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Solde restant : {formatFCFA(reste)} — réglez d'abord le paiement pour marquer comme livrée.
+                  Solde restant : {formatFCFA(reste)} — le client doit régler avant livraison.
                 </p>
               )}
             </section>
           )}
-
 
           {/* ── Notes internes ── */}
           <section>
@@ -542,58 +510,10 @@ export default function CommandeDetailSheet({
             />
           </section>
 
-          {/* ── Payment inline form ── */}
-          {paymentOpen && (
-            <section className="p-3 rounded-lg border border-border
-                                 space-y-3">
-              <Label>Montant du paiement (FCFA)</Label>
-              <Input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder={String(reste)}
-              />
-              <div>
-                <Label>Mode de paiement</Label>
-                <Select
-                  value={paymentMode}
-                  onValueChange={setPaymentMode}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CASH">Espèces</SelectItem>
-                    <SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem>
-                    <SelectItem value="CART">Virement</SelectItem>
-                    <SelectItem value="OTHER">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    paiementMutation.mutate(
-                      parseInt(paymentAmount || '0', 10)
-                    )
-                  }
-                  disabled={!paymentAmount || paiementMutation.isPending}>
-                  Valider
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setPaymentOpen(false)}>
-                  Annuler
-                </Button>
-              </div>
-            </section>
-          )}
-
-          {/* ── Action buttons ── */}
+          {/* ── Actions ── */}
           <div className="space-y-2">
 
-            {/* ✅ Quick transition button — hidden when delivered/cancelled */}
+            {/* Quick transition button */}
             {transition &&
               commande.status !== 'CANCELLED' &&
               !isDelivered && (
@@ -601,14 +521,15 @@ export default function CommandeDetailSheet({
                   onClick={() => change(transition.next)}
                   disabled={
                     statutMutation.isPending ||
-                    !isVerified ||
                     (transition.next === 'DELIVERED' && !isFullyPaid)
                   }
                   className={cn(
                     'w-full',
-                    (!isVerified || (transition.next === 'DELIVERED' && !isFullyPaid)) &&
+                    transition.next === 'DELIVERED' &&
+                      !isFullyPaid &&
                       'opacity-50 cursor-not-allowed'
-                  )}>
+                  )}
+                >
                   {transition.label}
                   {transition.next === 'DELIVERED' && !isFullyPaid && (
                     <span className="ml-2 text-xs opacity-70">(paiement requis)</span>
@@ -616,62 +537,52 @@ export default function CommandeDetailSheet({
                 </Button>
               )}
 
-
-            {/* ✅ Payment button — 3 states */}
-            {!paymentOpen && (
-              !isVerified ? (
-                // State A — no payment yet
-                <Button
-                  variant="secondary"
-                  onClick={() => setPaymentOpen(true)}
-                  className="w-full">
-                  Enregistrer un paiement
-                </Button>
-              ) : isFullyPaid ? (
-                // State B — fully paid → hide button
-                <div className="flex items-center justify-center gap-2
-                                text-success text-sm font-medium py-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Commande entièrement payée
-                </div>
-              ) : (
-                // State C — partially paid
-                <Button
-                  variant="outline"
-                  onClick={() => setPaymentOpen(true)}
-                  className="w-full gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Enregistrer le solde ({formatFCFA(reste)})
-                </Button>
-              )
-            )}
-
+            {/* Invoices */}
             {invoices.length > 0 && (
               <div className="space-y-2 p-3 bg-secondary/30 rounded-lg border border-border">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" /> Factures ({invoices.length})
+                  <FileText className="w-4 h-4 text-primary" /> Factures (
+                  {invoices.length})
                 </h4>
                 {invoices.map((inv: any) => {
-                  const typeLabel = ({
-                    ACOMPTE: "🧾 Facture d'acompte",
-                    SOLDE: '🧾 Facture de solde',
-                    INTEGRAL: '🧾 Facture paiement intégral',
-                    FRAIS_LIVRAISON: '🧾 Facture frais de livraison',
-                  } as Record<string, string>)[inv.type] || '🧾 Facture';
+                  const typeLabel =
+                    ({
+                      ACOMPTE: "🧾 Facture d'acompte",
+                      SOLDE: '🧾 Facture de solde',
+                      INTEGRAL: '🧾 Facture paiement intégral',
+                      FRAIS_LIVRAISON: '🧾 Facture frais de livraison',
+                    } as Record<string, string>)[inv.type] || '🧾 Facture';
                   return (
-                    <div key={inv.id} className="flex items-center justify-between gap-2 p-2 bg-card rounded border border-border">
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between gap-2 p-2 bg-card rounded border border-border"
+                    >
                       <div className="min-w-0">
                         <p className="text-xs font-medium truncate">{typeLabel}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {inv.numero} — {new Date(inv.dateEmission).toLocaleDateString('fr-FR')}
+                          {inv.numero} —{' '}
+                          {new Date(inv.submitDate).toLocaleDateString('fr-FR')}
                         </p>
-                        <p className="text-xs font-semibold text-primary">{formatFCFA(inv.montantFacture)}</p>
+                        <p className="text-xs font-semibold text-primary">
+                          {formatFCFA(inv.invoiceAmount)}
+                        </p>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => invoiceService.downloadPdf(inv.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-7 text-xs"
+                          onClick={() => invoiceService.downloadPdf(inv.id)}
+                        >
                           <Download className="w-3 h-3" /> PDF
                         </Button>
-                        <Button size="sm" variant="ghost" className="gap-1 h-7 text-xs" disabled={resendInvoiceMut.isPending} onClick={() => resendInvoiceMut.mutate(inv.id)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1 h-7 text-xs"
+                          disabled={resendInvoiceMut.isPending}
+                          onClick={() => resendInvoiceMut.mutate(inv.id)}
+                        >
                           <Send className="w-3 h-3" /> Relance
                         </Button>
                       </div>
@@ -681,19 +592,19 @@ export default function CommandeDetailSheet({
               </div>
             )}
 
-            {/* WhatsApp — smart template-based message */}
+            {/* WhatsApp smart message */}
             {(() => {
               const action = getWhatsAppAction(
                 commande.status || commande.statut,
-                isVerified,
+                isFullyPaid,   // replaces isVerified — client pays via app
                 isFullyPaid
               );
               return (
                 <Button
                   variant="outline"
                   onClick={handleSendWhatsApp}
-                  disabled={verifying}
-                  className={cn('w-full gap-2', buttonColorClass[action.variant])}>
+                  className={cn('w-full gap-2', buttonColorClass[action.variant])}
+                >
                   <MessageCircle className="w-4 h-4" />
                   {action.label}
                 </Button>
@@ -710,22 +621,23 @@ export default function CommandeDetailSheet({
                     '_blank'
                   )
                 }
-                className="w-full gap-2 text-xs">
+                className="w-full gap-2 text-xs"
+              >
                 <MessageCircle className="w-3.5 h-3.5" />
                 Ouvrir WhatsApp sans message
               </Button>
             )}
 
             {/* Cancel */}
-            {commande.status !== 'CANCELLED' &&
-              commande.status !== 'DELIVERED' && (
-                <Button
-                  variant="ghost"
-                  onClick={() => change('CANCELLED')}
-                  className="w-full text-destructive hover:text-destructive">
-                  Annuler la commande
-                </Button>
-              )}
+            {commande.status !== 'CANCELLED' && !isDelivered && (
+              <Button
+                variant="ghost"
+                onClick={() => change('CANCELLED')}
+                className="w-full text-destructive hover:text-destructive"
+              >
+                Annuler la commande
+              </Button>
+            )}
 
             {/* Delete — only for CANCELLED or DRAFT */}
             {(commande.status === 'CANCELLED' ||

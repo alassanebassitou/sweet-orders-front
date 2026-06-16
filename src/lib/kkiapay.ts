@@ -38,6 +38,7 @@ interface KkiapayOptions {
   amount: number;
   commandeId: number | string;
   clientInfo: { telephone?: string; name?: string; email?: string };
+  type: 'ACOMPTE' | 'SOLDE' | 'DELIVERY_FEES';
   onSuccess?: (transactionId: string) => void;
   onFailure?: (error: any) => void;
 }
@@ -63,10 +64,11 @@ const mapWidgetFailureCode = (error: any): string => {
   return statusMap[code] ?? 'error';
 };
 
-// ✅ Fonction séparée — vérification backend puis redirection
+// Fonction séparée — vérification backend puis redirection
 const verifyAndRedirect = async (
   transactionId: string,
   commandeId: number | string,
+  type: 'ACOMPTE' | 'SOLDE' | 'DELIVERY_FEES',
   paidAmount: number,
   onSuccess?: (transactionId: string) => void,
   onFailure?: (error: any) => void,
@@ -77,15 +79,16 @@ const verifyAndRedirect = async (
     const response = await api.post('/payments/kkiapay/verify', {
       transactionId,
       commandeId,
+      type,
     });
 
-    // ✅ Succès backend → on lit la réponse AVANT de rediriger
+    // Succès backend → on lit la réponse AVANT de rediriger
     console.log('[Kkiapay] Backend verify success:', response.data);
     frontendStatus = 'success';
     onSuccess?.(transactionId);
 
   } catch (err: any) {
-    // ✅ On lit la réponse d'erreur AVANT de rediriger
+    // On lit la réponse d'erreur AVANT de rediriger
     const responseData = err?.response?.data;
     console.log('[Kkiapay] Backend verify error response:', responseData);
     console.log('[Kkiapay] HTTP status:', err?.response?.status);
@@ -96,7 +99,7 @@ const verifyAndRedirect = async (
     onFailure?.(err);
   }
 
-  // ✅ Redirection APRÈS avoir tout lu
+  // Redirection APRÈS avoir tout lu
   console.log('[Kkiapay] Redirecting with status:', frontendStatus);
 
   const params = new URLSearchParams({
@@ -113,6 +116,7 @@ export const payWithKkiapay = async ({
   amount,
   commandeId,
   clientInfo,
+  type,
   onSuccess,
   onFailure,
 }: KkiapayOptions) => {
@@ -129,7 +133,7 @@ export const payWithKkiapay = async ({
     console.log('[Kkiapay] Widget success event — transactionId:', transactionId, 'amount:', paidAmount);
 
     // Appel séparé qui gère tout : vérif backend → lecture réponse → redirection
-    await verifyAndRedirect(transactionId, commandeId, paidAmount || amount, onSuccess, onFailure);
+    await verifyAndRedirect(transactionId, commandeId, type, paidAmount || amount, onSuccess, onFailure);
   };
 
   const failureHandler = (error: any) => {

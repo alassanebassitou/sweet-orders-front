@@ -192,9 +192,10 @@ export default function ClientCommandeDetail() {
                   commandeId: cmd.id,
                   clientInfo: {
                     telephone: user?.telephone,
-                    name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+                    name: `${user?.lastname || ''} ${user?.firstname || ''}`.trim(),
                     email: user?.email || '',
                   },
+                  type: 'SOLDE',
                 })}
                 className="w-full mt-3"
               >
@@ -268,9 +269,10 @@ export default function ClientCommandeDetail() {
                       commandeId: cmd.id,
                       clientInfo: {
                         telephone: user?.telephone,
-                        name: user?.name || `${user?.prenom || ''} ${user?.nom || ''}`.trim(),
+                        name: `${user?.lastname || ''} ${user?.firstname || ''}`.trim(),
                         email: user?.email || '',
                       },
+                      type: 'DELIVERY_FEES',
                       onSuccess: () => {
                         toast.success('Frais de livraison payés !');
                         qc.invalidateQueries({ queryKey: ['commande', id] });

@@ -87,7 +87,7 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
     [allZones, ville],
   );
   const filteredQuartiers = useMemo(
-    () => quartierInput.length === 0 ? quartiersForVille : quartiersForVille.filter((z: any) => z.quartier.toLowerCase().startsWith(quartierInput.toLowerCase())),
+    () => quartierInput.length === 0 ? quartiersForVille : quartiersForVille.filter((z: any) => z.neighborhood.toLowerCase().startsWith(quartierInput.toLowerCase())),
     [quartiersForVille, quartierInput],
   );
 
@@ -148,10 +148,10 @@ export default function NouvelleCommandeWizard({ open, onClose }: Props) {
         deliveryMode: mode,
         deliveryAddress: mode === 'HOME_DELIVERY' ? adresse : undefined,
         deliveryInstruction: instructions,
-        ville: mode === 'HOME_DELIVERY' ? ville : undefined,
-        quartier: mode === 'HOME_DELIVERY' ? quartier : undefined,
-        fraisLivraison: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
-        fraisLivraisonNonDefini: mode === 'HOME_DELIVERY' && showUnknownModal,
+        city: mode === 'HOME_DELIVERY' ? ville : undefined,
+        neighborhood: mode === 'HOME_DELIVERY' ? quartier : undefined,
+        deliveryFees: mode === 'HOME_DELIVERY' ? fraisLivraison : 0,
+        isDeliveryFeesApplied: mode === 'HOME_DELIVERY' && showUnknownModal,
         source: 'MANUALLY',
         productRequests: lignes.map((l) => ({
           productId: l.produitId,
@@ -420,16 +420,16 @@ const handleModeChange = (newMode: 'HOME_DELIVERY' | 'COLLECTION_ON_SITE') => {
                                 type="button"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => {
-                                  setQuartier(z.quartier); setQuartierInput(z.quartier); setSelectedZone(z);
-                                  setFraisLivraison(z.fraisLivraison || 0);
-                                  setShowUnknownModal((z.fraisLivraison || 0) === 0);
+                                  setQuartier(z.neighborhood); setQuartierInput(z.neighborhood); setSelectedZone(z);
+                                  setFraisLivraison(z.deliveryFees || 0);
+                                  setShowUnknownModal((z.deliveryFees || 0) === 0);
                                   setShowQuartierDropdown(false);
                                 }}
                                 className="w-full text-left px-4 py-3 text-sm hover:bg-secondary flex items-center justify-between"
                               >
-                                <span className="font-medium">{z.quartier}</span>
-                                {z.fraisLivraison > 0
-                                  ? <span className="text-xs font-semibold text-primary">+{formatFCFA(z.fraisLivraison)}</span>
+                                <span className="font-medium">{z.neighborhood}</span>
+                                {z.deliveryFees > 0
+                                  ? <span className="text-xs font-semibold text-primary">+{formatFCFA(z.deliveryFees)}</span>
                                   : <span className="text-xs text-amber-600 italic">Frais à définir</span>}
                               </button>
                             ))}

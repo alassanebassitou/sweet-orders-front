@@ -24,7 +24,7 @@ export default function PhoneNumberModal({ open, onOpenChange }: Props) {
   const [savingPhone, setSavingPhone] = useState(false);
 
   const handleSavePhone = async () => {
-    if (phoneInput.length < 8) return;
+    if (phoneInput.length < 10) return;
     setSavingPhone(true);
     try {
       const fullPhone = '+229' + phoneInput;
@@ -70,20 +70,20 @@ export default function PhoneNumberModal({ open, onOpenChange }: Props) {
                 type="tel"
                 value={phoneInput}
                 onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="97 00 00 00"
-                maxLength={8}
+                placeholder="01 97 00 00 00"
+                maxLength={10}
                 className="flex-1"
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Ex: 97 00 00 00 (sans le +229)
+              Ex: 01 97 00 00 00 (sans le +229)
             </p>
           </div>
 
           <Button
             className="w-full"
             onClick={handleSavePhone}
-            disabled={phoneInput.length < 8 || savingPhone}
+            disabled={phoneInput.length < 10 || savingPhone}
           >
             {savingPhone ? (
               <>

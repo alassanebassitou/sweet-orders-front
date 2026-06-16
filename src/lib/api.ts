@@ -21,16 +21,26 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      useAuthStore.getState().logout();
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      const sessionId = useAuthStore.getState().sessionId;
+      const path = window.location.pathname;
+      const publicPaths = ['/', '/login', '/contact', '/signup', '/login/verify'];
+      const isPublicPage = publicPaths.some(p => path === p || path.startsWith(p));
+
+      if (sessionId && !isPublicPage) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      } else if (!isPublicPage) {
+        useAuthStore.getState().logout();
         window.location.href = '/login';
       }
     }
 
-    const message = error?.response?.data?.message
+    const message = error?.response?.data?.message 
+      || error?.response?.data?.error
+      || (typeof error?.response?.data === 'string' ? error.response.data : null) 
+      || error?.message 
       || 'Une erreur est survenue';
 
-    // Don't show toast for 401 (handled above)
     if (error?.response?.status !== 401) {
       toast.error(message);
     }

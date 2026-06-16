@@ -190,8 +190,8 @@ export const categoryService = {
 // ---- Kkiapay
 export const paymentService = {
   kkiapayConfig: () => api.get('/payments/kkiapay/config').then(r => r.data),
-  verifyKkiapay: (transactionId: string, commandeId: string | number) =>
-    api.post('/payments/kkiapay/verify', { transactionId, commandeId }).then(r => r.data),
+  verifyKkiapay: (transactionId: string, commandeId: string | number, type: 'ACOMPTE' | 'SOLDE' | 'DELIVERY_FEES') =>
+    api.post('/payments/kkiapay/verify', { transactionId, commandeId, type }).then(r => r.data),
 };
 
 // ---- Invoices

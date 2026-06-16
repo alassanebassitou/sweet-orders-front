@@ -61,37 +61,37 @@ export function AdminReviewRow({ avis }: { avis: any }) {
             {avis.comment && <p className="text-sm mt-2 text-foreground/90">{avis.comment}</p>}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2 mt-3">
           {hidden ? (
             <Button
               size="sm"
               onClick={() => restoreMut.mutate()}
               disabled={restoreMut.isPending}
-              className="gap-1.5 bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+              className="gap-1.5 bg-green-50 text-green-700 hover:bg-green-100 border border-green-300 rounded-full px-3 py-1.5 h-8 text-xs font-medium"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Restaurer
+              <RotateCcw className="w-3 h-3" /> Restaurer
             </Button>
           ) : (
             <>
-              <Badge variant="outline" className="gap-1 text-green-700 border-green-300 bg-green-50">
+              <Badge variant="outline" className="gap-1.5 text-green-700 border-green-300 bg-green-50 rounded-full px-3 py-1.5 h-8 text-xs font-medium">
                 <Eye className="w-3 h-3" /> Visible
               </Badge>
               <Button
                 size="sm"
                 onClick={() => hideMut.mutate()}
                 disabled={hideMut.isPending}
-                className="gap-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300"
+                className="gap-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-300 rounded-full px-3 py-1.5 h-8 text-xs font-medium"
               >
-                <EyeOff className="w-3.5 h-3.5" /> Masquer
+                <EyeOff className="w-3 h-3" /> Masquer
               </Button>
             </>
           )}
           <Button
             size="sm"
             onClick={() => setConfirmOpen(true)}
-            className="gap-1.5 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300"
+            className="gap-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-300 rounded-full px-3 py-1.5 h-8 text-xs font-medium"
           >
-            <Trash2 className="w-3.5 h-3.5" /> Supprimer
+            <Trash2 className="w-3 h-3" /> Supprimer
           </Button>
         </div>
       </div>

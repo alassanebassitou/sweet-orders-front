@@ -92,40 +92,42 @@ export default function ProductionPage() {
     ficheContent = <EmptyState message="Rien à produire aujourd'hui" icon={ChefHat} />;
   } else {
     ficheContent = (
-      <table className="w-full text-sm">
-        <thead className="bg-secondary/50 text-xs text-muted-foreground">
-          <tr>
-            <th className="p-3 text-left">✓</th>
-            <th className="p-3 text-left">Produit</th>
-            <th className="p-3 text-left">Qté</th>
-            <th className="p-3 text-left">Client</th>
-            <th className="p-3 text-left">Personnalisation</th>
-            <th className="p-3 text-left">N°</th>
-          </tr>
-        </thead>
-        <tbody>
-          {todayItems.map((ligne) => {
-            const done = ligne.isFinished === true;
-            return (
-              <tr key={`${ligne.commandeId}`} className="border-t border-border">
-                <td className="p-3">
-                  <Checkbox
-                    checked={done}
-                    onCheckedChange={() => terminerMut.mutate(ligne.commandeId)}
-                  />
-                </td>
-                <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>
-                  {ligne.productName}
-                </td>
-                <td className="p-3">{ligne.quantity}</td>
-                <td className="p-3">{ligne.clientName}</td>
-                <td className="p-3 text-xs text-muted-foreground">{ligne.cakeMessage || '—'}</td>
-                <td className="p-3 text-xs text-muted-foreground">{ligne.noCommande}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto -mx-4 sm:mx-0 rounded-lg">
+        <table className="w-full min-w-[540px] text-sm">
+          <thead className="bg-secondary/50 text-xs text-muted-foreground">
+            <tr>
+              <th className="w-8 p-3 text-left">✓</th>
+              <th className="min-w-[120px] p-3 text-left">Produit</th>
+              <th className="w-12 p-3 text-left">Qté</th>
+              <th className="min-w-[120px] p-3 text-left">Client</th>
+              <th className="min-w-[120px] p-3 text-left">Personnalisation</th>
+              <th className="w-16 p-3 text-left">N°</th>
+            </tr>
+          </thead>
+          <tbody>
+            {todayItems.map((ligne) => {
+              const done = ligne.isFinished === true;
+              return (
+                <tr key={`${ligne.commandeId}`} className="border-t border-border">
+                  <td className="p-3">
+                    <Checkbox
+                      checked={done}
+                      onCheckedChange={() => terminerMut.mutate(ligne.commandeId)}
+                    />
+                  </td>
+                  <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>
+                    {ligne.productName}
+                  </td>
+                  <td className="p-3">{ligne.quantity}</td>
+                  <td className="p-3">{ligne.clientName}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{ligne.cakeMessage || '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{ligne.noCommande}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     );
   }
 
