@@ -113,8 +113,9 @@ export default function CataloguePage() {
   const save = () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
     if (!form.category) { toast.error('Catégorie requise'); return; }
-    if (editing) updateMut.mutate({ id: editing.id, payload: form as any });
-    else createMut.mutate(form);
+    const payload = { ...form, categoryId: form.category };
+    if (editing) updateMut.mutate({ id: editing.id, payload: payload as any });
+    else createMut.mutate(payload);
   };
   const toggleActif = (p: any) => updateMut.mutate({ id: p.id, payload: { ...p, isActif: !p.isActif } });
 
