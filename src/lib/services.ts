@@ -22,7 +22,7 @@ export const userService = {
   update: (id: string | number, payload: any) =>
     api.put(`/admin/users/${id}`, payload).then(r => r.data),
   create: (payload: any) => api.post('/admin/users', payload).then(r => r.data),
-  deactivate: (id: string | number) => api.delete(`/admin/users/${id}`).then(r => r.data),
+  deactivate: (id: string | number) => api.delete(`/admin/users/${id}/deactivate`).then(r => r.data),
   activate: (id: number) => api.patch(`/admin/users/${id}/activate`).then(r => r.data),
   updatePhone: (telephone: string) =>
     api.patch('/users/me/phone', { telephone }).then(r => r.data),
