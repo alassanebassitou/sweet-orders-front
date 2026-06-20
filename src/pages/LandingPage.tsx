@@ -148,7 +148,7 @@ function HeroSection() {
 
       <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
 
-      <div className="relative w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center gap-5 md:gap-6">
+      <div className="relative w-full max-w-4xl mx-auto px-4 py-6 flex flex-col items-center gap-4 md:gap-5">
 
         {/* Title + subtitle — tighter spacing, smaller on shorter screens */}
         <motion.div
@@ -158,7 +158,7 @@ function HeroSection() {
           animate="visible"
         >
           <motion.h1
-            className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
+            className="font-display text-2xl md:text-3xl lg:text-4xl font-bold leading-tight"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -167,7 +167,7 @@ function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="mt-3 text-base md:text-lg text-muted-foreground"
+            className="mt-2 text-sm md:text-base text-muted-foreground"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
@@ -178,7 +178,7 @@ function HeroSection() {
 
         {/* Slider — flexes to fill remaining space, capped so it never overflows the viewport */}
         <motion.div
-          className="w-full max-h-[55vh] md:max-h-[58vh]"
+          className="w-full max-h-[62vh] md:max-h-[65vh]"
           variants={scaleIn}
           initial="hidden"
           animate="visible"
