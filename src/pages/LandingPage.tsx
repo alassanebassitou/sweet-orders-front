@@ -136,8 +136,6 @@ const heroSlides = [
 
 // ─── Hero slider component ────────────────────────────────────────────────────
 
-// ─── Hero section (fixed: fits first viewport, no cropping) ──────────────────
-
 function HeroSection() {
   const navigate = useNavigate();
 
@@ -180,7 +178,7 @@ function HeroSection() {
 
         {/* Slider — flexes to fill remaining space, capped so it never overflows the viewport */}
         <motion.div
-          className="w-full max-h-[48vh] md:max-h-[50vh]"
+          className="w-full max-h-[55vh] md:max-h-[58vh]"
           variants={scaleIn}
           initial="hidden"
           animate="visible"
@@ -263,7 +261,7 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
           <img
             src={slides[index].src}
             alt={slides[index].alt}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
