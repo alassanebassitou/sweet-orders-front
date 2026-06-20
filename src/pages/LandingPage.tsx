@@ -150,6 +150,7 @@ function HeroSection() {
 
       <div className="relative w-full max-w-4xl mx-auto px-4 py-4 flex flex-col items-center gap-3 h-full justify-center">
 
+        {/* Title + subtitle — compact, single-line on most screens */}
         <motion.div
           className="text-center max-w-2xl flex-shrink-0"
           variants={fadeUp}
@@ -251,16 +252,26 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
-          className="absolute inset-0"
+          className="absolute inset-0 overflow-hidden"
           initial={{ opacity: 0, scale: 1.03 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
+          {/* Theme-colored backdrop fills empty space reliably — blur-based backdrops
+              can look like flat color anyway if the source image has plain edges,
+              so a deliberate gradient in the brand palette is more predictable */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-accent/15 to-primary/20" />
+          <img
+            src={slides[index].src}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover scale-125 blur-3xl opacity-60"
+          />
           <img
             src={slides[index].src}
             alt={slides[index].alt}
-            className="w-full h-full object-contain"
+            className="relative w-full h-full object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
