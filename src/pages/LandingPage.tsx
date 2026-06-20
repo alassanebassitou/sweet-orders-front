@@ -110,21 +110,20 @@ function FloatingBlob({
 }
 
 // ─── Hero slider data ─────────────────────────────────────────────────────────
-// Replace these with your real photos (e.g. import from /src/assets or use a CDN URL).
-// Suggested filenames if you drop them in /public/hero/:
+
 const heroSlides = [
   {
-    src: '/hero/commande-telephone.jpg',
+    src: '/hero/commande-telephone.png',
     alt: 'Cliente passant commande depuis son téléphone',
     caption: 'Commandez en quelques clics',
   },
   {
-    src: '/hero/reception-commande.jpg',
+    src: '/hero/reception-commande.png',
     alt: "L'équipe Sweet Orders reçoit votre commande",
     caption: 'Nous recevons votre commande',
   },
   {
-    src: '/hero/preparation-gateau.jpg',
+    src: '/hero/preparation-gateau.png',
     alt: 'Préparation artisanale du gâteau',
     caption: 'Préparation artisanale, avec soin',
   },
@@ -136,6 +135,87 @@ const heroSlides = [
 ];
 
 // ─── Hero slider component ────────────────────────────────────────────────────
+
+// ─── Hero section (fixed: fits first viewport, no cropping) ──────────────────
+
+function HeroSection() {
+  const navigate = useNavigate();
+
+  return (
+    <section className="relative overflow-hidden min-h-[100vh] flex items-center">
+      {/* Animated background blobs */}
+      <FloatingBlob className="w-96 h-96 bg-primary top-[-80px] left-[-100px]" delay={0} />
+      <FloatingBlob className="w-72 h-72 bg-accent top-[40%] right-[-60px]" delay={2} />
+      <FloatingBlob className="w-48 h-48 bg-primary/40 bottom-[-40px] left-[30%]" delay={4} />
+
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
+
+      <div className="relative w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center gap-5 md:gap-6">
+
+        {/* Title + subtitle — tighter spacing, smaller on shorter screens */}
+        <motion.div
+          className="text-center max-w-2xl"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1
+            className="font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Des gâteaux artisanaux livrés chez vous
+          </motion.h1>
+
+          <motion.p
+            className="mt-3 text-base md:text-lg text-muted-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            Commandez en ligne, nous livrons à Cotonou et environs.
+          </motion.p>
+        </motion.div>
+
+        {/* Slider — flexes to fill remaining space, capped so it never overflows the viewport */}
+        <motion.div
+          className="w-full max-h-[48vh] md:max-h-[50vh]"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+        >
+          <HeroSlider slides={heroSlides} />
+        </motion.div>
+
+        {/* CTA buttons */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            {/* Primary CTA: uses --primary (terracotta), the only token in this palette
+                with enough contrast/weight to act as a real call-to-action */}
+            <Button size="lg" variant="default" onClick={() => navigate('/signup')}>
+              Créer un compte
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            {/* Secondary action: outline reads cleanly against the cream hero background
+                regardless of --secondary's lightness, so it's the safer pick here */}
+            <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
+              Se connecter
+            </Button>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Hero slider — height now driven by parent container, not its own aspect-ratio ──
 
 function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; intervalMs?: number }) {
   const [index, setIndex] = useState(0);
@@ -153,7 +233,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
   const goPrev = () => setIndex((prev) => (prev - 1 + slides.length) % slides.length);
   const goNext = () => setIndex((prev) => (prev + 1) % slides.length);
 
-  // Basic swipe support for touch devices
   const touchStartX = useRef(0);
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -166,7 +245,7 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
 
   return (
     <div
-      className="relative w-full aspect-square md:aspect-[4/5] rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-primary/30 to-accent/40"
+      className="relative w-full h-full min-h-[220px] rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-primary/30 to-accent/40"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
@@ -186,11 +265,9 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
             alt={slides[index].alt}
             className="w-full h-full object-cover"
             onError={(e) => {
-              // Fallback so the layout never breaks if an image is missing
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
-          {/* Caption overlay */}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-5">
             <p className="text-white font-medium text-sm md:text-base">
               {slides[index].caption}
@@ -199,7 +276,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
         </motion.div>
       </AnimatePresence>
 
-      {/* Prev / Next arrows */}
       <button
         type="button"
         aria-label="Image précédente"
@@ -217,7 +293,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
         <ChevronRight className="w-5 h-5 text-foreground" />
       </button>
 
-      {/* Dots */}
       <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
         {slides.map((_, i) => (
           <button
@@ -232,81 +307,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
         ))}
       </div>
     </div>
-  );
-}
-
-// ─── Hero section (replace your existing <section> hero block with this) ─────
-
-function HeroSection() {
-  const navigate = useNavigate();
-
-  return (
-    <section className="relative overflow-hidden">
-      {/* Animated background blobs */}
-      <FloatingBlob className="w-96 h-96 bg-primary top-[-80px] left-[-100px]" delay={0} />
-      <FloatingBlob className="w-72 h-72 bg-accent top-[40%] right-[-60px]" delay={2} />
-      <FloatingBlob className="w-48 h-48 bg-primary/40 bottom-[-40px] left-[30%]" delay={4} />
-
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
-
-      <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center gap-8">
-
-        {/* Title + subtitle, centered above the slider */}
-        <motion.div
-          className="text-center max-w-2xl"
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.h1
-            className="font-display text-4xl md:text-5xl font-bold leading-tight"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          >
-            Des gâteaux artisanaux livrés chez vous
-          </motion.h1>
-
-          <motion.p
-            className="mt-4 text-lg text-muted-foreground"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            Commandez en ligne, nous livrons à Cotonou et environs.
-          </motion.p>
-        </motion.div>
-
-        {/* Full-width slider replacing the old static image card */}
-        <motion.div
-          className="w-full"
-          variants={scaleIn}
-          initial="hidden"
-          animate="visible"
-        >
-          <HeroSlider slides={heroSlides} />
-        </motion.div>
-
-        {/* CTA buttons, now under the slider */}
-        <motion.div
-          className="flex flex-wrap justify-center gap-3"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-        >
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            <Button size="lg" variant="secondary" onClick={() => navigate('/signup')}>
-              Créer un compte
-            </Button>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
-              Se connecter
-            </Button>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
   );
 }
 
