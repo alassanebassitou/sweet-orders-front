@@ -1,11 +1,11 @@
-import { useRef } from 'react';
-import { CakeSlice, Truck, Sparkles, Phone, MapPin } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { CakeSlice, Truck, Sparkles, Phone, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { motion, useInView, Variants } from 'framer-motion';
+import { AnimatePresence, motion, useInView, Variants } from 'framer-motion';
 import { formatFCFA } from '@/lib/format';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
@@ -109,6 +109,207 @@ function FloatingBlob({
   );
 }
 
+// ─── Hero slider data ─────────────────────────────────────────────────────────
+// Replace these with your real photos (e.g. import from /src/assets or use a CDN URL).
+// Suggested filenames if you drop them in /public/hero/:
+const heroSlides = [
+  {
+    src: '/hero/commande-telephone.jpg',
+    alt: 'Cliente passant commande depuis son téléphone',
+    caption: 'Commandez en quelques clics',
+  },
+  {
+    src: '/hero/reception-commande.jpg',
+    alt: "L'équipe Sweet Orders reçoit votre commande",
+    caption: 'Nous recevons votre commande',
+  },
+  {
+    src: '/hero/preparation-gateau.jpg',
+    alt: 'Préparation artisanale du gâteau',
+    caption: 'Préparation artisanale, avec soin',
+  },
+  {
+    src: '/hero/livraison.jpg',
+    alt: 'Livraison du gâteau au client',
+    caption: 'Livré chez vous, frais et à temps',
+  },
+];
+
+// ─── Hero slider component ────────────────────────────────────────────────────
+
+function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; intervalMs?: number }) {
+  const [index, setIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % slides.length);
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }, [isPaused, intervalMs, slides.length]);
+
+  const goTo = (i: number) => setIndex(i);
+  const goPrev = () => setIndex((prev) => (prev - 1 + slides.length) % slides.length);
+  const goNext = () => setIndex((prev) => (prev + 1) % slides.length);
+
+  // Basic swipe support for touch devices
+  const touchStartX = useRef(0);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (delta > 50) goPrev();
+    else if (delta < -50) goNext();
+  };
+
+  return (
+    <div
+      className="relative w-full aspect-square md:aspect-[4/5] rounded-3xl overflow-hidden shadow-xl bg-gradient-to-br from-primary/30 to-accent/40"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.03 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <img
+            src={slides[index].src}
+            alt={slides[index].alt}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback so the layout never breaks if an image is missing
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+          {/* Caption overlay */}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-5">
+            <p className="text-white font-medium text-sm md:text-base">
+              {slides[index].caption}
+            </p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Prev / Next arrows */}
+      <button
+        type="button"
+        aria-label="Image précédente"
+        onClick={goPrev}
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-colors"
+      >
+        <ChevronLeft className="w-5 h-5 text-foreground" />
+      </button>
+      <button
+        type="button"
+        aria-label="Image suivante"
+        onClick={goNext}
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow transition-colors"
+      >
+        <ChevronRight className="w-5 h-5 text-foreground" />
+      </button>
+
+      {/* Dots */}
+      <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Aller à l'image ${i + 1}`}
+            onClick={() => goTo(i)}
+            className={`h-2 rounded-full transition-all ${
+              i === index ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Hero section (replace your existing <section> hero block with this) ─────
+
+function HeroSection() {
+  const navigate = useNavigate();
+
+  return (
+    <section className="relative overflow-hidden">
+      {/* Animated background blobs */}
+      <FloatingBlob className="w-96 h-96 bg-primary top-[-80px] left-[-100px]" delay={0} />
+      <FloatingBlob className="w-72 h-72 bg-accent top-[40%] right-[-60px]" delay={2} />
+      <FloatingBlob className="w-48 h-48 bg-primary/40 bottom-[-40px] left-[30%]" delay={4} />
+
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
+
+      <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center gap-8">
+
+        {/* Title + subtitle, centered above the slider */}
+        <motion.div
+          className="text-center max-w-2xl"
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h1
+            className="font-display text-4xl md:text-5xl font-bold leading-tight"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            Des gâteaux artisanaux livrés chez vous
+          </motion.h1>
+
+          <motion.p
+            className="mt-4 text-lg text-muted-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            Commandez en ligne, nous livrons à Cotonou et environs.
+          </motion.p>
+        </motion.div>
+
+        {/* Full-width slider replacing the old static image card */}
+        <motion.div
+          className="w-full"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+        >
+          <HeroSlider slides={heroSlides} />
+        </motion.div>
+
+        {/* CTA buttons, now under the slider */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <Button size="lg" variant="secondary" onClick={() => navigate('/signup')}>
+              Créer un compte
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
+              Se connecter
+            </Button>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -174,82 +375,7 @@ export default function LandingPage() {
       </motion.header>
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden">
-        {/* Animated background blobs */}
-        <FloatingBlob className="w-96 h-96 bg-primary top-[-80px] left-[-100px]" delay={0} />
-        <FloatingBlob className="w-72 h-72 bg-accent top-[40%] right-[-60px]" delay={2} />
-        <FloatingBlob className="w-48 h-48 bg-primary/40 bottom-[-40px] left-[30%]" delay={4} />
-
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
-
-        <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
-
-          {/* Left: text */}
-          <motion.div
-            variants={slideLeft}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.h1
-              className="font-display text-4xl md:text-5xl font-bold leading-tight"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              Des gâteaux artisanaux livrés chez vous
-            </motion.h1>
-
-            <motion.p
-              className="mt-4 text-lg text-muted-foreground"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              Commandez en ligne, nous livrons à Cotonou et environs.
-            </motion.p>
-
-            <motion.div
-              className="mt-8 flex flex-wrap gap-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55, duration: 0.6 }}
-            >
-              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" onClick={goCatalogue}>Voir le catalogue</Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" variant="secondary" onClick={() => navigate('/signup')}>
-                  Créer un compte
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
-                  Se connecter
-                </Button>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-
-          {/* Right: hero image card */}
-          <motion.div
-            className="aspect-square rounded-3xl bg-gradient-to-br from-primary/30 to-accent/40 flex items-center justify-center shadow-xl"
-            variants={slideRight}
-            initial="hidden"
-            animate="visible"
-            whileHover={{ scale: 1.02, rotate: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-          >
-            {/* Floating logo inside */}
-            <motion.img
-              src="/favicon.ico"
-              alt="Sweet Orders"
-              className="w-20 h-20 object-contain drop-shadow-xl"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </motion.div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* ── Why us ── */}
       <section className="max-w-6xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-6">

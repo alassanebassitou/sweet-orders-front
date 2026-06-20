@@ -42,12 +42,11 @@ export default function LoginPage() {
         city: u.city,
         isActif: u.isActif,
       };
-      console.log("Google login success, user:", user);
       setAuth(user, sid);
       navigate(user.role === 'ROLE_ADMIN' ? '/admin/dashboard' : '/app/home');
     } catch (err: any) {
       console.error(err);
-      toast.error('Connexion échouée. Veuillez réessayer.');
+      //toast.error('Connexion échouée. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
