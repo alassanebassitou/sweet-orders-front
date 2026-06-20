@@ -140,7 +140,7 @@ function HeroSection() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden min-h-[100vh] flex items-center">
+    <section className="relative overflow-hidden h-[100vh] flex items-center">
       {/* Animated background blobs */}
       <FloatingBlob className="w-96 h-96 bg-primary top-[-80px] left-[-100px]" delay={0} />
       <FloatingBlob className="w-72 h-72 bg-accent top-[40%] right-[-60px]" delay={2} />
@@ -148,17 +148,16 @@ function HeroSection() {
 
       <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-accent/5" />
 
-      <div className="relative w-full max-w-4xl mx-auto px-4 py-6 flex flex-col items-center gap-4 md:gap-5">
+      <div className="relative w-full max-w-4xl mx-auto px-4 py-4 flex flex-col items-center gap-3 h-full justify-center">
 
-        {/* Title + subtitle — tighter spacing, smaller on shorter screens */}
         <motion.div
-          className="text-center max-w-2xl"
+          className="text-center max-w-2xl flex-shrink-0"
           variants={fadeUp}
           initial="hidden"
           animate="visible"
         >
           <motion.h1
-            className="font-display text-2xl md:text-3xl lg:text-4xl font-bold leading-tight"
+            className="font-display text-xl md:text-2xl lg:text-3xl font-bold leading-tight"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -167,7 +166,7 @@ function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="mt-2 text-sm md:text-base text-muted-foreground"
+            className="mt-1 text-xs md:text-sm text-muted-foreground"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
@@ -176,9 +175,9 @@ function HeroSection() {
           </motion.p>
         </motion.div>
 
-        {/* Slider — flexes to fill remaining space, capped so it never overflows the viewport */}
+        {/* Slider — takes ALL remaining vertical space via flex-1, image shown in full via object-contain */}
         <motion.div
-          className="w-full max-h-[62vh] md:max-h-[65vh]"
+          className="w-full flex-1 min-h-0"
           variants={scaleIn}
           initial="hidden"
           animate="visible"
@@ -188,7 +187,7 @@ function HeroSection() {
 
         {/* CTA buttons */}
         <motion.div
-          className="flex flex-wrap justify-center gap-3"
+          className="flex flex-wrap justify-center gap-3 flex-shrink-0"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
@@ -261,7 +260,7 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
           <img
             src={slides[index].src}
             alt={slides[index].alt}
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
             }}
