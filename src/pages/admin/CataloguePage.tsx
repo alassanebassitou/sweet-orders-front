@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, CakeSlice, Edit, Trash2, Upload, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, CakeSlice, Edit, Trash2, Upload, Image as ImageIcon, Loader2, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -53,6 +53,22 @@ export default function CataloguePage() {
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingExtra, setUploadingExtra] = useState(false);
 
+  // ── Filters / display state ──────────────────────────────────────────────
+  const [searchInput, setSearchInput] = useState('');       // raw input, updates every keystroke
+  const [search, setSearch] = useState('');                 // debounced value actually used for filtering
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'>('name-asc');
+
+  // ── Delete confirmation state ────────────────────────────────────────────
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | number | null>(null);
+
+  // Debounce search input by 300ms so we don't re-filter the list on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ['products'] });
 
   const createMut = useMutation({
@@ -74,8 +90,8 @@ export default function CataloguePage() {
   });
   const removeMut = useMutation({
     mutationFn: (id: string | number) => productService.remove(id),
-    onSuccess: () => { toast.success('Produit désactivé'); invalidate(); },
-    onError: (e) => toast.error(e.message || 'Erreur suppression'),
+    onSuccess: () => { toast.success('Produit désactivé'); invalidate(); setConfirmDeleteId(null); },
+    onError: (e) => { toast.error(e.message || 'Erreur suppression'); setConfirmDeleteId(null); },
   });
 
   const openNew = () => {
@@ -165,21 +181,146 @@ export default function CataloguePage() {
     }
   };
 
+  // ── Derived list: filter + sort ──────────────────────────────────────────
+  const filteredProduits = useMemo(() => {
+    let list = [...(produits as any[])];
+
+    // Text search on name + description
+    if (search) {
+      list = list.filter((p) => {
+        const haystack = `${p.name || ''} ${p.description || ''}`.toLowerCase();
+        return haystack.includes(search);
+      });
+    }
+
+    // Category filter
+    if (categoryFilter !== 'all') {
+      list = list.filter((p) => {
+        const catName = p.category || (categories as any[]).find((c: any) => c.id === p.categoryId)?.name;
+        return String(catName) === categoryFilter;
+      });
+    }
+
+    // Status filter
+    if (statusFilter === 'active') list = list.filter((p) => p.isActif);
+    if (statusFilter === 'inactive') list = list.filter((p) => !p.isActif);
+
+    // Sort
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc': return (a.name || '').localeCompare(b.name || '');
+        case 'name-desc': return (b.name || '').localeCompare(a.name || '');
+        case 'price-asc': return (a.basePrice || 0) - (b.basePrice || 0);
+        case 'price-desc': return (b.basePrice || 0) - (a.basePrice || 0);
+        default: return 0;
+      }
+    });
+
+    return list;
+  }, [produits, categories, search, categoryFilter, statusFilter, sortBy]);
+
+  const hasActiveFilters = search !== '' || categoryFilter !== 'all' || statusFilter !== 'all';
+
+  const resetFilters = () => {
+    setSearchInput('');
+    setSearch('');
+    setCategoryFilter('all');
+    setStatusFilter('all');
+    setSortBy('name-asc');
+  };
+
+  const productPendingDelete = (produits as any[]).find((p) => p.id === confirmDeleteId);
+
   return (
     <div className="p-4 md:p-6 space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Catalogue</h1>
-          <p className="text-muted-foreground text-sm">{(produits as any[]).length} produit(s)</p>
+          <p className="text-muted-foreground text-sm">
+            {filteredProduits.length} produit(s)
+            {hasActiveFilters && (produits as any[]).length !== filteredProduits.length
+              ? ` sur ${(produits as any[]).length}`
+              : ''}
+          </p>
         </div>
         <Button onClick={openNew} className="gap-2"><Plus className="w-4 h-4" /> Nouveau produit</Button>
       </div>
 
+      {/* ── Filter bar ── */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Rechercher un produit..."
+            className="pl-9"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes catégories</SelectItem>
+            {(categories as any[]).map((cat: any) => (
+              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous statuts</SelectItem>
+            <SelectItem value="active">Actif</SelectItem>
+            <SelectItem value="inactive">Inactif</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Trier par" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Nom (A → Z)</SelectItem>
+            <SelectItem value="name-desc">Nom (Z → A)</SelectItem>
+            <SelectItem value="price-asc">Prix croissant</SelectItem>
+            <SelectItem value="price-desc">Prix décroissant</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" onClick={resetFilters} className="gap-2 shrink-0">
+            <X className="w-4 h-4" /> Réinitialiser
+          </Button>
+        )}
+      </div>
+
       {isLoading ? <LoadingState /> :
        isError ? <ErrorState message="Impossible de charger le catalogue" onRetry={refetch} /> :
-       (produits as any[]).length === 0 ? <EmptyState message="Aucun produit" icon={CakeSlice} /> : (
+       (produits as any[]).length === 0 ? <EmptyState message="Aucun produit" icon={CakeSlice} /> :
+       filteredProduits.length === 0 ? (
+        <div className="text-center py-12 space-y-3">
+          <SearchX className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="text-muted-foreground">Aucun produit ne correspond à ces filtres</p>
+          <Button variant="outline" size="sm" onClick={resetFilters}>Réinitialiser les filtres</Button>
+        </div>
+       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(produits as any[]).map((p: any) => (
+          {filteredProduits.map((p: any) => (
             <Card key={p.id} className="overflow-hidden shadow-sm">
               <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
                 {p.photoUrl ? <img src={p.photoUrl} alt={p.name} className="absolute inset-0 w-full h-full object-cover" /> : <CakeSlice className="w-12 h-12 text-primary/60" />}
@@ -200,7 +341,7 @@ export default function CataloguePage() {
                   <Switch checked={p.isActif} onCheckedChange={() => toggleActif(p)} />
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Edit className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => removeMut.mutate(p.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => setConfirmDeleteId(p.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -209,6 +350,7 @@ export default function CataloguePage() {
         </div>
       )}
 
+      {/* ── Edit/create dialog ── */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? 'Modifier le produit' : 'Nouveau produit'}</DialogTitle></DialogHeader>
@@ -304,6 +446,30 @@ export default function CataloguePage() {
             <Button variant="outline" onClick={() => setOpen(false)}>Fermer</Button>
             <Button onClick={save} disabled={createMut.isPending || updateMut.isPending}>
               {editing ? 'Enregistrer' : 'Créer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete confirmation dialog ── */}
+      <Dialog open={confirmDeleteId !== null} onOpenChange={(v) => !v && setConfirmDeleteId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Désactiver ce produit ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {productPendingDelete
+              ? `"${productPendingDelete.name}" sera désactivé et ne sera plus visible côté client.`
+              : 'Ce produit sera désactivé.'}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>Annuler</Button>
+            <Button
+              variant="destructive"
+              onClick={() => confirmDeleteId !== null && removeMut.mutate(confirmDeleteId)}
+              disabled={removeMut.isPending}
+            >
+              Désactiver
             </Button>
           </DialogFooter>
         </DialogContent>

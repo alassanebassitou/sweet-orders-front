@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, Plus, Users, Phone, MapPin, Star, Eye, UserCheck, UserX } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Search, Users, Phone, MapPin, Star, Eye, UserCheck, UserX, SearchX, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +12,19 @@ import { toast } from 'sonner';
 import ClientDetailSheet from '@/components/clients/ClientDetailSheet';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/StateViews';
 import { usePresenceStore } from '@/stores/presenceStore';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@radix-ui/react-select';
 // Come back to update client info and commandes in the detail sheet, and add possibility to create new client from the page (with a form in a sheet)
+
+
 export default function ClientsPage() {
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [vipOnly, setVipOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<
+    'name-asc' | 'name-desc' | 'spent-desc' | 'spent-asc' | 'orders-desc' | 'orders-asc'
+  >('name-asc');
   const onlineUsers = usePresenceStore((s) => s.onlineUsers);
   const qc = useQueryClient();
 
@@ -25,13 +33,62 @@ export default function ClientsPage() {
     queryFn: () => userService.listAdmin(),
   });
 
+  // Debounce search input by 300ms so we don't re-filter the list on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const clients = users.filter((u: any) => u.role === 'ROLE_CLIENT');
-  const filtered = clients.filter((c: any) => {
-    const matchSearch = [c.name, c.firstname, c.telephone, c.city, c.email].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
-    const isActive = c.actif || c.isActif;
-    const matchActive = activeFilter === 'all' ? true : activeFilter === 'active' ? isActive : !isActive;
-    return matchSearch && matchActive;
-  });
+
+  const filtered = useMemo(() => {
+    let list = clients.filter((c: any) => {
+      const matchSearch = [c.name, c.firstname, c.telephone, c.city, c.email]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(search);
+      const isActive = c.actif || c.isActif;
+      const matchActive = activeFilter === 'all' ? true : activeFilter === 'active' ? isActive : !isActive;
+      const matchVip = vipOnly ? (c.estVip || c.isVIP) : true;
+      return matchSearch && matchActive && matchVip;
+    });
+
+    list = [...list].sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'name-asc':
+          return `${a.firstname || ''} ${a.lastname || a.name || ''}`.localeCompare(
+            `${b.firstname || ''} ${b.lastname || b.name || ''}`
+          );
+        case 'name-desc':
+          return `${b.firstname || ''} ${b.lastname || b.name || ''}`.localeCompare(
+            `${a.firstname || ''} ${a.lastname || a.name || ''}`
+          );
+        case 'spent-desc':
+          return (b.totalExpenses ?? 0) - (a.totalExpenses ?? 0);
+        case 'spent-asc':
+          return (a.totalExpenses ?? 0) - (b.totalExpenses ?? 0);
+        case 'orders-desc':
+          return (b.totalCommande ?? 0) - (a.totalCommande ?? 0);
+        case 'orders-asc':
+          return (a.totalCommande ?? 0) - (b.totalCommande ?? 0);
+        default:
+          return 0;
+      }
+    });
+
+    return list;
+  }, [clients, search, activeFilter, vipOnly, sortBy]);
+
+  const hasActiveFilters = search !== '' || activeFilter !== 'all' || vipOnly;
+
+  const resetFilters = () => {
+    setSearchInput('');
+    setSearch('');
+    setActiveFilter('all');
+    setVipOnly(false);
+    setSortBy('name-asc');
+  };
 
   const activateMut = useMutation({
     mutationFn: (id: number) => userService.activate(id),
@@ -57,17 +114,50 @@ export default function ClientsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Clients</h1>
-          <p className="text-muted-foreground text-sm">{clients.length} client(s)</p>
+          <p className="text-muted-foreground text-sm">
+            {filtered.length} client(s)
+            {hasActiveFilters && clients.length !== filtered.length ? ` sur ${clients.length}` : ''}
+          </p>
         </div>
         {/* <Button className="gap-2"><Plus className="w-4 h-4" /> Nouveau</Button> */}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Rechercher par nom, téléphone ou ville..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom, téléphone ou ville..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-9"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+          <SelectTrigger className="w-full sm:w-52">
+            <SelectValue placeholder="Trier par" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Nom (A → Z)</SelectItem>
+            <SelectItem value="name-desc">Nom (Z → A)</SelectItem>
+            <SelectItem value="spent-desc">Total dépensé (haut → bas)</SelectItem>
+            <SelectItem value="spent-asc">Total dépensé (bas → haut)</SelectItem>
+            <SelectItem value="orders-desc">Nb commandes (haut → bas)</SelectItem>
+            <SelectItem value="orders-asc">Nb commandes (bas → haut)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {[
           { value: 'all', label: 'Tous' },
           { value: 'active', label: 'Actifs' },
@@ -85,11 +175,39 @@ export default function ClientsPage() {
             {f.label}
           </button>
         ))}
+
+        {/* VIP filter — independent toggle, combinable with the status filter above */}
+        <button
+          onClick={() => setVipOnly((v) => !v)}
+          className={cn(
+            'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1',
+            vipOnly
+              ? 'bg-warning/15 text-warning border-warning/40'
+              : 'bg-card text-muted-foreground border-border hover:bg-secondary'
+          )}>
+          <Star className="w-3 h-3" /> VIP
+        </button>
+
+        {hasActiveFilters && (
+          <button
+            onClick={resetFilters}
+            className="px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <X className="w-3 h-3" /> Réinitialiser
+          </button>
+        )}
       </div>
 
       {isLoading ? <LoadingState /> :
        isError ? <ErrorState message="Impossible de charger les clients" onRetry={refetch} /> :
-       filtered.length === 0 ? <EmptyState message="Aucun client trouvé" icon={Users} /> : (
+       clients.length === 0 ? <EmptyState message="Aucun client trouvé" icon={Users} /> :
+       filtered.length === 0 ? (
+        <div className="text-center py-12 space-y-3">
+          <SearchX className="w-10 h-10 mx-auto text-muted-foreground" />
+          <p className="text-muted-foreground">Aucun client ne correspond à ces filtres</p>
+          <Button variant="outline" size="sm" onClick={resetFilters}>Réinitialiser les filtres</Button>
+        </div>
+       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c: any) => (
             <Card key={c.id} className={cn('shadow-sm hover:shadow-md transition-shadow cursor-pointer', !(c.actif || c.isActif) && 'opacity-60 grayscale-[30%]')} onClick={() => setSelectedClientId(c.id)}>
