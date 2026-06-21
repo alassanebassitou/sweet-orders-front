@@ -44,13 +44,19 @@ export default function ProductionPage() {
   const dateDebut = monday.toISOString().split('T')[0];
   const today = new Date().toISOString().split('T')[0];
 
+  // Controlled tab state so clicking a day card can switch tabs programmatically
+  const [activeTab, setActiveTab] = useState<'planning' | 'jour'>('planning');
+  // Tracks which date's data the "Fiche du jour" tab should show.
+  // Defaults to today; clicking a different day card in Planning semaine updates this.
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+
   const planningQ = useQuery({
     queryKey: ['planning', dateDebut],
     queryFn: () => productionService.planning(dateDebut),
   });
   const ficheQ = useQuery({
-    queryKey: ['fiche-jour', today],
-    queryFn: () => productionService.ficheJour(today),
+    queryKey: ['fiche-jour', selectedDate],
+    queryFn: () => productionService.ficheJour(selectedDate),
   });
 
   const terminerMut = useMutation({
@@ -78,11 +84,17 @@ export default function ProductionPage() {
     return d.toISOString().split('T')[0];
   });
 
+  // Clicking a day card jumps to "Fiche du jour" pre-loaded with that day's data
+  const handleDayClick = (date: string) => {
+    setSelectedDate(date);
+    setActiveTab('jour');
+  };
+
   const formData = ficheQ.data as { lines?: FicheLine[]; totalCakes?: number; overload?: boolean } | undefined;
   const todayItems = (formData?.lines || []) as FicheLine[];
   const totalCakes: number = formData?.totalCakes || 0;
   const isSurcharge: boolean = formData?.overload || false;
-  
+
   let ficheContent: ReactNode;
   if (ficheQ.isLoading) {
     ficheContent = <LoadingState />;
@@ -92,42 +104,84 @@ export default function ProductionPage() {
     ficheContent = <EmptyState message="Rien à produire aujourd'hui" icon={ChefHat} />;
   } else {
     ficheContent = (
-      <div className="overflow-x-auto -mx-4 sm:mx-0 rounded-lg">
-        <table className="w-full min-w-[540px] text-sm">
-          <thead className="bg-secondary/50 text-xs text-muted-foreground">
-            <tr>
-              <th className="w-8 p-3 text-left">✓</th>
-              <th className="min-w-[120px] p-3 text-left">Produit</th>
-              <th className="w-12 p-3 text-left">Qté</th>
-              <th className="min-w-[120px] p-3 text-left">Client</th>
-              <th className="min-w-[120px] p-3 text-left">Personnalisation</th>
-              <th className="w-16 p-3 text-left">N°</th>
-            </tr>
-          </thead>
-          <tbody>
-            {todayItems.map((ligne) => {
-              const done = ligne.isFinished === true;
-              return (
-                <tr key={`${ligne.commandeId}`} className="border-t border-border">
-                  <td className="p-3">
+      <>
+        <div className="hidden md:block overflow-x-auto rounded-lg">
+          <table className="w-full min-w-[540px] text-sm">
+            <thead className="bg-secondary/50 text-xs text-muted-foreground">
+              <tr>
+                <th className="w-8 p-3 text-left">✓</th>
+                <th className="min-w-[120px] p-3 text-left">Produit</th>
+                <th className="w-12 p-3 text-left">Qté</th>
+                <th className="min-w-[120px] p-3 text-left">Client</th>
+                <th className="min-w-[120px] p-3 text-left">Personnalisation</th>
+                <th className="w-16 p-3 text-left">N°</th>
+              </tr>
+            </thead>
+            <tbody>
+              {todayItems.map((ligne) => {
+                const done = ligne.isFinished === true;
+                return (
+                  <tr key={`${ligne.commandeId}`} className="border-t border-border">
+                    <td className="p-3">
+                      <Checkbox
+                        checked={done}
+                        onCheckedChange={() => terminerMut.mutate(ligne.commandeId)}
+                      />
+                    </td>
+                    <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>
+                      {ligne.productName}
+                    </td>
+                    <td className="p-3">{ligne.quantity}</td>
+                    <td className="p-3">{ligne.clientName}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{ligne.cakeMessage || '—'}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{ligne.noCommande}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Mobile: KPI-style stacked cards, same pattern as the Commandes page ── */}
+        <div className="md:hidden space-y-3 p-3">
+          {todayItems.map((ligne) => {
+            const done = ligne.isFinished === true;
+            return (
+              <Card
+                key={`${ligne.commandeId}`}
+                className={cn('shadow-sm', done && 'opacity-60')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
                     <Checkbox
                       checked={done}
                       onCheckedChange={() => terminerMut.mutate(ligne.commandeId)}
+                      className="mt-1"
                     />
-                  </td>
-                  <td className={cn('p-3 font-medium', done && 'line-through opacity-50')}>
-                    {ligne.productName}
-                  </td>
-                  <td className="p-3">{ligne.quantity}</td>
-                  <td className="p-3">{ligne.clientName}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{ligne.cakeMessage || '—'}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{ligne.noCommande}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn('font-display font-semibold', done && 'line-through opacity-60')}>
+                          {ligne.productName}
+                        </p>
+                        <span className="shrink-0 text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          x{ligne.quantity}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{ligne.clientName}</p>
+                      {ligne.cakeMessage && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          "{ligne.cakeMessage}"
+                        </p>
+                      )}
+                      <p className="text-[11px] text-muted-foreground/70 mt-2">{ligne.noCommande}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </>
     );
   }
 
@@ -143,7 +197,7 @@ export default function ProductionPage() {
         <p className="text-muted-foreground text-sm">Planning et fiche du jour</p>
       </div>
 
-      <Tabs defaultValue="planning">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'planning' | 'jour')}>
         <TabsList>
           <TabsTrigger value="planning">Planning semaine</TabsTrigger>
           <TabsTrigger value="jour">Fiche du jour</TabsTrigger>
@@ -159,10 +213,21 @@ export default function ProductionPage() {
               {week.map((d, i) => {
                 const orders = byDay[d] || [];
                 const overload = orders.length > 5;
+                const isToday = d === today;
                 return (
                   <Card
                     key={d}
-                    className={cn('shadow-sm', overload && 'border-warning bg-warning/5', d === today && 'ring-2 ring-primary')}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleDayClick(d)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') handleDayClick(d);
+                    }}
+                    className={cn(
+                      'shadow-sm cursor-pointer transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      overload && 'border-warning bg-warning/5',
+                      isToday && 'ring-2 ring-primary'
+                    )}
                   >
                     <CardContent className="p-3">
                       <p className="text-xs text-muted-foreground">{days[i]}</p>
@@ -185,7 +250,9 @@ export default function ProductionPage() {
 
         <TabsContent value="jour" className="space-y-4 pt-4">
           <div className="flex justify-between items-center">
-            <h2 className="font-display font-semibold">Production d'aujourd'hui</h2>
+            <h2 className="font-display font-semibold">
+              Production du {new Date(selectedDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </h2>
             <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
               <Printer className="w-4 h-4" /> Imprimer
             </Button>

@@ -10,8 +10,6 @@ import { formatFCFA } from '@/lib/format';
 import { useAuthStore } from '@/stores/authStore';
 import api from '@/lib/api';
 
-// ─── Reusable animation variants ─────────────────────────────────────────────
-
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 32 },
   visible: (delay = 0) => ({
@@ -56,8 +54,6 @@ const slideRight: Variants = {
   },
 };
 
-// ─── Scroll-reveal wrapper ────────────────────────────────────────────────────
-
 function RevealOnScroll({
   children,
   variants = fadeUp,
@@ -86,8 +82,6 @@ function RevealOnScroll({
   );
 }
 
-// ─── Floating decoration shapes (hero bg) ────────────────────────────────────
-
 function FloatingBlob({
   className,
   delay = 0,
@@ -108,8 +102,6 @@ function FloatingBlob({
     />
   );
 }
-
-// ─── Hero slider data ─────────────────────────────────────────────────────────
 
 const heroSlides = [
   {
@@ -133,8 +125,6 @@ const heroSlides = [
     caption: 'Livré chez vous, frais et à temps',
   },
 ];
-
-// ─── Hero slider component ────────────────────────────────────────────────────
 
 function HeroSection() {
   const navigate = useNavigate();
@@ -176,7 +166,6 @@ function HeroSection() {
           </motion.p>
         </motion.div>
 
-        {/* Slider — takes ALL remaining vertical space via flex-1, image shown in full via object-contain */}
         <motion.div
           className="w-full flex-1 min-h-0"
           variants={scaleIn}
@@ -186,7 +175,6 @@ function HeroSection() {
           <HeroSlider slides={heroSlides} />
         </motion.div>
 
-        {/* CTA buttons */}
         <motion.div
           className="flex flex-wrap justify-center gap-3 flex-shrink-0"
           initial={{ opacity: 0, y: 20 }}
@@ -194,15 +182,11 @@ function HeroSection() {
           transition={{ delay: 0.3, duration: 0.6 }}
         >
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            {/* Primary CTA: uses --primary (terracotta), the only token in this palette
-                with enough contrast/weight to act as a real call-to-action */}
             <Button size="lg" variant="default" onClick={() => navigate('/signup')}>
               Créer un compte
             </Button>
           </motion.div>
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            {/* Secondary action: outline reads cleanly against the cream hero background
-                regardless of --secondary's lightness, so it's the safer pick here */}
             <Button size="lg" variant="outline" onClick={() => navigate('/login')}>
               Se connecter
             </Button>
@@ -212,8 +196,6 @@ function HeroSection() {
     </section>
   );
 }
-
-// ─── Hero slider — height now driven by parent container, not its own aspect-ratio ──
 
 function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; intervalMs?: number }) {
   const [index, setIndex] = useState(0);
@@ -258,9 +240,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Theme-colored backdrop fills empty space reliably — blur-based backdrops
-              can look like flat color anyway if the source image has plain edges,
-              so a deliberate gradient in the brand palette is more predictable */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-accent/15 to-primary/20" />
           <img
             src={slides[index].src}
@@ -317,8 +296,6 @@ function HeroSlider({ slides, intervalMs = 4000 }: { slides: typeof heroSlides; 
     </div>
   );
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const navigate = useNavigate();
